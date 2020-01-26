@@ -1,0 +1,49 @@
+version: "2"
+
+env:
+  TERM: screen-256color
+  GO111MODULE: on
+
+vars:
+  BUILD_DIR: build
+  BUILD_BIN: sidecred
+  BUILD_VERSION:
+    sh: git describe --tags --candidates=1 --dirty
+
+tasks:
+  default:
+    cmds:
+      - task: test
+
+  generate:
+    desc: Generate test fakes
+    cmds:
+      - go generate ./...
+
+  test:
+    desc: Run test suite
+    cmds:
+      - gofmt -s -l -w .
+      - go vet -v ./...
+      - go test -race -v ./...
+
+  build:
+    desc: Build the default binary
+    cmds:
+      - task: test
+      - go build -o {{.BUILD_DIR}}/{{.BUILD_BIN}}{{exeExt}} -ldflags="-s -w -X=main.version={{.BUILD_VERSION}}" -v cmd/{{.BUILD_BIN}}/main.go
+    env:
+      CGO_ENABLED: "0"
+      GOOS: "{{OS}}"
+      GOARCH: "{{ARCH}}"
+
+  clean:
+    desc: Clean build directory
+    cmds:
+      - rm {{.BUILD_DIR}}/*
+
+  e2e:
+    desc: Run E2E test suite
+    cmds:
+    - task: test
+    - go test -race -v ./... -tags=e2e
