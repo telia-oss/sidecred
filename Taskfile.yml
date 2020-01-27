@@ -12,6 +12,7 @@ tasks:
     desc: Run tests.
     cmds:
       - task: go-test
+      - task: terraform-test
 
   build:
     desc: Build binaries.
@@ -29,12 +30,35 @@ tasks:
   go-generate:
     desc: Generate test fakes
     cmds:
-    - go generate ./...
+      - go generate ./...
 
   go-test:
     desc: Run tests for all Go code.
-    silent: true
     cmds:
-    - gofmt -s -l -w .
-    - go vet -v ./...
-    - go test -race -v ./...
+      - gofmt -s -l -w .
+      - go vet -v ./...
+      - go test -race -v ./...
+    silent: true
+
+  terraform-test:
+    desc: Run tests for all terraform directories.
+    env:
+      DIRECTORIES:
+        sh: find . -type f -name '*.tf' -not -path "**/.terraform/*" -print0 | xargs -0I {} dirname {} | sort -u
+      AWS_REGION: eu-west-1
+    cmds:
+      - |
+        BOLD=$(tput bold)
+        NORM=$(tput sgr0)
+        CWD=$PWD
+        for d in $DIRECTORIES; do 
+          cd $d
+          echo "${BOLD}$PWD:${NORM}"
+
+          terraform fmt -check=true -recursive=false || exit 1
+          terraform init -backend=false -input=false -get=true -get-plugins=true -no-color || exit 1
+          terraform validate || exit 1
+
+          cd $CWD
+        done
+    silent: true

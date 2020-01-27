@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -32,11 +33,11 @@ func runFunc(namespace *string, config *string, statePath *string) func(*sidecre
 		}
 		var requests []*sidecred.Request
 		if err := yaml.UnmarshalStrict(b, &requests); err != nil {
-			return err
+			return fmt.Errorf("failed to load config: %s", err)
 		}
 		state, err := backend.Load(*statePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to load state: %s", err)
 		}
 		defer backend.Save(*statePath, state)
 		return s.Process(*namespace, requests, state)

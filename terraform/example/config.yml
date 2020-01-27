@@ -1,0 +1,8 @@
+- type: random
+  name: random-string-1
+  config:
+    length: 20
+- type: random
+  name: random-string-2
+  config:
+    length: 15
