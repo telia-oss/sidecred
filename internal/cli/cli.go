@@ -56,13 +56,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		}
 		defer logger.Sync()
 
-		var (
-			providers []sidecred.Provider
-			store     sidecred.SecretStore
-			backend   sidecred.StateBackend
-		)
-
-		providers = append(providers, random.New(time.Now().UnixNano()))
+		providers := []sidecred.Provider{random.New(time.Now().UnixNano())}
 
 		if *stsProviderEnabled {
 			providers = append(providers, sts.New(
@@ -86,6 +80,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 			))
 		}
 
+		var store sidecred.SecretStore
 		switch sidecred.StoreType(*secretStoreBackend) {
 		case sidecred.SecretsManager:
 			store = secretsmanager.New(
@@ -106,6 +101,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 			kingpin.Fatalf("unknown secretstore backend: %s", *secretStoreBackend)
 		}
 
+		var backend sidecred.StateBackend
 		switch *stateBackend {
 		case "file":
 			backend = file.New(*fileBackendPath)
