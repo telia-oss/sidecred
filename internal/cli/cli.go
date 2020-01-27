@@ -20,18 +20,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"go.uber.org/zap"
-	"sigs.k8s.io/yaml"
 )
 
 type (
+	runFunc       func(func(namespace string, requests []*sidecred.Request) error) error
 	loggerFactory func(bool) (*zap.Logger, error)
 )
 
 // Setup a kingpin.Application to run the autoapprover.
-func Setup(app *kingpin.Application, loggerFactory loggerFactory) {
+func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 	var (
-		namespace                         = app.Flag("namespace", "Namespace to use when processing the requests.").Required().String()
-		config                            = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 		stsProviderEnabled                = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
 		stsProviderExternalID             = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
 		stsProviderSessionDuration        = app.Flag("sts-provider-session-duration", "Session duration for STS credentials").Default("1h").Duration()
@@ -52,14 +50,13 @@ func Setup(app *kingpin.Application, loggerFactory loggerFactory) {
 	)
 
 	app.Action(func(_ *kingpin.ParseContext) error {
-		logger, err := loggerFactory(*debug)
+		logger, err := newLogger(*debug)
 		if err != nil {
 			kingpin.Fatalf("initialize logger: %s", err)
 		}
 		defer logger.Sync()
 
 		var (
-			requests  []*sidecred.Request
 			providers []sidecred.Provider
 			store     sidecred.SecretStore
 			backend   sidecred.StateBackend
@@ -118,15 +115,11 @@ func Setup(app *kingpin.Application, loggerFactory loggerFactory) {
 			kingpin.Fatalf("unknown state backend: %s", *stateBackend)
 		}
 
-		requests, err = loadConfigFromFile(*config)
-		if err != nil {
-			kingpin.Fatalf("load config: %s", err)
-		}
 		s, err := sidecred.New(providers, store, backend, logger)
 		if err != nil {
 			kingpin.Fatalf("initialize sidecred: %s", err)
 		}
-		return s.Process(*namespace, requests)
+		return run(s.Process)
 	})
 }
 
@@ -143,16 +136,4 @@ func newAWSSession() *session.Session {
 		}
 	})
 	return sess
-}
-
-func loadConfigFromFile(f string) ([]*sidecred.Request, error) {
-	b, err := ioutil.ReadFile(f)
-	if err != nil {
-		return nil, err
-	}
-	var config []*sidecred.Request
-	if err := yaml.UnmarshalStrict(b, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
 }
