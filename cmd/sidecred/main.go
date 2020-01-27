@@ -7,11 +7,11 @@ import (
 
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/internal/cli"
-	"sigs.k8s.io/yaml"
 
 	"github.com/alecthomas/kingpin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -35,7 +35,7 @@ func runFunc(namespace *string, config *string) func(func(namespace string, requ
 			return err
 		}
 		var requests []*sidecred.Request
-		if err := yaml.UnmarshalStrict(b, &config); err != nil {
+		if err := yaml.UnmarshalStrict(b, &requests); err != nil {
 			return err
 		}
 		return f(*namespace, requests)
