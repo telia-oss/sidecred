@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -52,7 +53,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 	app.Action(func(_ *kingpin.ParseContext) error {
 		logger, err := newLogger(*debug)
 		if err != nil {
-			kingpin.Fatalf("initialize logger: %s", err)
+			panic(fmt.Errorf("initialize zap logger: %s", err))
 		}
 		defer logger.Sync()
 
@@ -69,11 +70,11 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		if *githubProviderEnabled {
 			privateKey, err := ioutil.ReadFile(*githubProviderPrivateKey)
 			if err != nil {
-				kingpin.Fatalf("read private key: %s", err)
+				logger.Fatal("read private key", zap.Error(err))
 			}
 			app, err := github.NewAppsClient(*githubProviderIntegrationID, string(privateKey))
 			if err != nil {
-				kingpin.Fatalf("initialize github app: %s", err)
+				logger.Fatal("initialize github app", zap.Error(err))
 			}
 			providers = append(providers, github.New(app,
 				github.WithDeployKeyRotationInterval(*githubProviderKeyRotationInterval),
@@ -98,7 +99,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 				inprocess.WithPathTemplate(*inprocessStorePathTemplate),
 			)
 		default:
-			kingpin.Fatalf("unknown secretstore backend: %s", *secretStoreBackend)
+			logger.Fatal("unknown secretstore backend", zap.String("backend", *secretStoreBackend))
 		}
 
 		var backend sidecred.StateBackend
@@ -108,12 +109,12 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		case "s3":
 			backend = s3.New(s3.NewClient(newAWSSession()), *s3BackendBucket, *s3BackendPath)
 		default:
-			kingpin.Fatalf("unknown state backend: %s", *stateBackend)
+			logger.Fatal("unknown state backend", zap.String("backend", *stateBackend))
 		}
 
 		s, err := sidecred.New(providers, store, backend, logger)
 		if err != nil {
-			kingpin.Fatalf("initialize sidecred: %s", err)
+			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
 		return run(s.Process)
 	})
