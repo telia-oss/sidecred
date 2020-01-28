@@ -74,7 +74,7 @@ func (b *backend) Save(state *sidecred.State) error {
 		Bucket: aws.String(b.bucket),
 		Key:    aws.String(b.path),
 	})
-	return nil
+	return err
 }
 
 // S3API wraps the interface for the API and provides a mocked implementation.
