@@ -258,15 +258,15 @@ Loop:
 				log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 				continue
 			}
-			s.state.AddSecret(s.store.Type(), newSecret(path, c.Expiration))
+			s.state.AddSecret(s.store.Type(), newSecret(r.Name, path, c.Expiration))
 			log.Debug("stored credential", zap.String("path", path))
 		}
 		log.Info("done processing")
 	}
 
 	for _, state := range s.state.Providers {
-		for _, r := range state.Resources {
-			r := r // TODO: Figure out why this is needed -_-
+		for _, resource := range state.Resources {
+			r := resource
 			if r.InUse && !r.Deposed && r.Expiration.After(time.Now()) {
 				continue
 			}
@@ -287,11 +287,11 @@ Loop:
 		}
 	}
 
-	for _, r := range s.state.ListExpiredSecrets(s.store.Type()) {
-		log := s.logger.With(zap.String("path", r.Path))
-		log.Info("deleting expired secret")
+	for _, secret := range s.state.ListOrphanedSecrets(s.store.Type()) {
+		r := secret
+		log.Info("deleting orphaned secret", zap.String("path", r.Path))
 		if err := s.store.Delete(r.Path); err != nil {
-			log.Error("delete secret", zap.Error(err))
+			log.Error("delete secret", zap.String("path", r.Path), zap.Error(err))
 		}
 		s.state.RemoveSecret(s.store.Type(), r)
 	}
