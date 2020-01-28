@@ -27,7 +27,7 @@ func TestState(t *testing.T) {
 			description: "state works",
 			stateID:     testStateID,
 			expectedJSON: strings.TrimSpace(`
-{"providers":[{"type":"random","resources":[{"id":"fake.state.id","expiration":"2020-01-30T12:00:00Z","deposed":false}]}],"stores":[{"type":"inprocess","secrets":[{"path":"fake.store.path","expiration":"2020-01-30T12:00:00Z"}]}]}
+{"providers":[{"type":"random","resources":[{"id":"fake.state.id","expiration":"2020-01-30T12:00:00Z","deposed":false}]}],"stores":[{"type":"inprocess","secrets":[{"resource_id":"fake.state.id","path":"fake.store.path","expiration":"2020-01-30T12:00:00Z"}]}]}
 `),
 			expectedFinalJSON: strings.TrimSpace(`
 {"providers":[{"type":"random","resources":[]}],"stores":[{"type":"inprocess","secrets":[]}]}
@@ -44,6 +44,7 @@ func TestState(t *testing.T) {
 				Expiration: fixedTestTime,
 			})
 			state.AddSecret(sidecred.Inprocess, &sidecred.Secret{
+				ResourceID: tc.stateID,
 				Path:       "fake.store.path",
 				Expiration: fixedTestTime,
 			})

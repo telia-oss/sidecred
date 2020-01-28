@@ -122,12 +122,13 @@ type storeState struct {
 }
 
 // newSecret returns a sidecred.Secret for storing in state.
-func newSecret(path string, experation time.Time) *Secret {
-	return &Secret{Path: path, Expiration: experation}
+func newSecret(resourceID, path string, experation time.Time) *Secret {
+	return &Secret{ResourceID: resourceID, Path: path, Expiration: experation}
 }
 
 // Secret is used to hold state about secrets stored in a secret backend.
 type Secret struct {
+	ResourceID string    `json:"resource_id"`
 	Path       string    `json:"path"`
 	Expiration time.Time `json:"expiration"`
 }
@@ -159,21 +160,27 @@ func (s *State) AddSecret(t StoreType, secret *Secret) {
 	state.Secrets = append(state.Secrets, secret)
 }
 
-// ListExpiredSecrets for a specific store type.
-func (s *State) ListExpiredSecrets(t StoreType) []*Secret {
+// ListOrphanedSecrets lists all secrets tied to missing resource
+// IDs that should be considered orhpaned.
+func (s *State) ListOrphanedSecrets(t StoreType) []*Secret {
+	validResourceIDs := make(map[string]struct{})
+	for _, p := range s.Providers {
+		for _, r := range p.Resources {
+			validResourceIDs[r.ID] = struct{}{}
+		}
+	}
 	state, ok := s.getSecretStoreState(t)
 	if !ok {
 		return nil
 	}
-	var secrets []*Secret
-
+	var orphaned []*Secret
 	for _, sec := range state.Secrets {
-		if sec.Expiration.After(time.Now()) {
+		if _, ok := validResourceIDs[sec.ResourceID]; ok {
 			continue
 		}
-		secrets = append(secrets, sec)
+		orphaned = append(orphaned, sec)
 	}
-	return secrets
+	return orphaned
 }
 
 // RemoveSecret from the state.
