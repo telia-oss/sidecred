@@ -25,7 +25,7 @@ import (
 )
 
 type (
-	runFunc       func(func(namespace string, requests []*sidecred.Request) error) error
+	runFunc       func(*sidecred.Sidecred) error
 	loggerFactory func(bool) (*zap.Logger, error)
 )
 
@@ -120,7 +120,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		if err != nil {
 			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
-		return run(s.Process)
+		return run(s)
 	})
 }
 

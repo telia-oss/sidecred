@@ -23,8 +23,8 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(namespace *string, config *string) func(func(namespace string, requests []*sidecred.Request) error) error {
-	return func(f func(namespace string, requests []*sidecred.Request) error) error {
+func runFunc(namespace *string, config *string) func(*sidecred.Sidecred) error {
+	return func(s *sidecred.Sidecred) error {
 		b, err := ioutil.ReadFile(*config)
 		if err != nil {
 			return err
@@ -33,7 +33,6 @@ func runFunc(namespace *string, config *string) func(func(namespace string, requ
 		if err := yaml.UnmarshalStrict(b, &requests); err != nil {
 			return err
 		}
-		return f(*namespace, requests)
+		return s.Process(*namespace, requests)
 	}
 }
-
