@@ -14,8 +14,8 @@ import (
 var version string
 
 func main() {
-	app := kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
 	var (
+		app       = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
 		namespace = app.Flag("namespace", "Namespace to use when processing the requests.").Required().String()
 		config    = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 	)

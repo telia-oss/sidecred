@@ -70,5 +70,4 @@ func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
 		return nil, err
 	}
 	return requests, nil
-
 }
