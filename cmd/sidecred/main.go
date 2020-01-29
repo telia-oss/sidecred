@@ -14,9 +14,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var (
-	version string
-)
+var version string
 
 func main() {
 	app := kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()

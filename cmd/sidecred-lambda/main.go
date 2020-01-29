@@ -1,0 +1,101 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"os"
+	"time"
+
+	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/internal/cli"
+
+	"github.com/alecthomas/kingpin"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+var version string
+
+func main() {
+	var (
+		app    = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
+		bucket = app.Flag("config-bucket", "Name of the S3 bucket where the config is stored.").Required().String()
+	)
+	cli.Setup(app, runFunc(bucket), loggerFactory)
+	kingpin.MustParse(app.Parse(os.Args[1:]))
+}
+
+// Event is the expected payload sent to the Lambda.
+type Event struct {
+	Namespace string `json:"namespace"`
+	Path      string `json:"path"`
+}
+
+func runFunc(bucket *string) func(func(namespace string, requests []*sidecred.Request) error) error {
+	return func(f func(namespace string, requests []*sidecred.Request) error) error {
+		lambda.Start(func(event Event) error {
+			requests, err := loadConfig(*bucket, event.Path)
+			if err != nil {
+				return err
+			}
+			return f(event.Namespace, requests)
+		})
+		return nil
+	}
+}
+
+func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	client := s3.New(sess)
+
+	var requests []*sidecred.Request
+	obj, err := client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer obj.Body.Close()
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, obj.Body); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(buf.Bytes(), &requests); err != nil {
+		return nil, err
+	}
+	return requests, nil
+
+}
+
+func loggerFactory(debug bool) (*zap.Logger, error) {
+	config := zap.NewProductionConfig()
+
+	// Disable entries like: "caller":"autoapprover/autoapprover.go:97"
+	config.DisableCaller = true
+
+	// Disable logging the stack trace
+	config.DisableStacktrace = true
+
+	// Format timestamps as RFC3339 strings
+	// Adapted from: https://github.com/uber-go/zap/issues/661#issuecomment-520686037
+	config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(
+		func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.UTC().Format(time.RFC3339))
+		},
+	)
+
+	if debug {
+		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	}
+
+	return config.Build()
+}
