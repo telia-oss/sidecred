@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type (
@@ -51,6 +52,9 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 	)
 
 	app.Action(func(_ *kingpin.ParseContext) error {
+		if newLogger == nil {
+			newLogger = defaultLogger
+		}
 		logger, err := newLogger(*debug)
 		if err != nil {
 			panic(fmt.Errorf("initialize zap logger: %s", err))
@@ -133,4 +137,28 @@ func newAWSSession() *session.Session {
 		}
 	})
 	return sess
+}
+
+func defaultLogger(debug bool) (*zap.Logger, error) {
+	config := zap.NewProductionConfig()
+
+	// Disable entries like: "caller":"autoapprover/autoapprover.go:97"
+	config.DisableCaller = true
+
+	// Disable logging the stack trace
+	config.DisableStacktrace = true
+
+	// Format timestamps as RFC3339 strings
+	// Adapted from: https://github.com/uber-go/zap/issues/661#issuecomment-520686037
+	config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(
+		func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.UTC().Format(time.RFC3339))
+		},
+	)
+
+	if debug {
+		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	}
+
+	return config.Build()
 }
