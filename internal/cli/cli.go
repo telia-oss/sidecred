@@ -24,13 +24,15 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Type definitions that allow us to pass in test fakes.
 type (
-	runFunc       func(*sidecred.Sidecred) error
-	loggerFactory func(bool) (*zap.Logger, error)
+	runFunc          func(*sidecred.Sidecred) error
+	awsClientFactory func() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI)
+	loggerFactory    func(bool) (*zap.Logger, error)
 )
 
 // Setup a kingpin.Application to run the autoapprover.
-func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
+func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) {
 	var (
 		stsProviderEnabled                = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
 		stsProviderExternalID             = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
@@ -55,6 +57,9 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		if newLogger == nil {
 			newLogger = defaultLogger
 		}
+		if newAWSClient == nil {
+			newAWSClient = defaultAWSClientFactory
+		}
 		logger, err := newLogger(*debug)
 		if err != nil {
 			panic(fmt.Errorf("initialize zap logger: %s", err))
@@ -64,8 +69,8 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		providers := []sidecred.Provider{random.New(time.Now().UnixNano())}
 
 		if *stsProviderEnabled {
-			providers = append(providers, sts.New(
-				sts.NewClient(newAWSSession()),
+			_, client, _, _ := newAWSClient()
+			providers = append(providers, sts.New(client,
 				sts.WithExternalID(*stsProviderExternalID),
 				sts.WithSessionDuration(*stsProviderSessionDuration),
 			))
@@ -88,13 +93,13 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		var store sidecred.SecretStore
 		switch sidecred.StoreType(*secretStoreBackend) {
 		case sidecred.SecretsManager:
-			store = secretsmanager.New(
-				secretsmanager.NewClient(newAWSSession()),
+			_, _, _, client := newAWSClient()
+			store = secretsmanager.New(client,
 				secretsmanager.WithPathTemplate(*secretsManagerStorePathTemplate),
 			)
 		case sidecred.SSM:
-			store = ssm.New(
-				ssm.NewClient(newAWSSession()),
+			_, _, client, _ := newAWSClient()
+			store = ssm.New(client,
 				ssm.WithPathTemplate(*ssmStorePathTemplate),
 				ssm.WithKMSKeyID(*ssmStoreKMSKeyID),
 			)
@@ -111,7 +116,8 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 		case "file":
 			backend = file.New(*fileBackendPath)
 		case "s3":
-			backend = s3.New(s3.NewClient(newAWSSession()), *s3BackendBucket, *s3BackendPath)
+			client, _, _, _ := newAWSClient()
+			backend = s3.New(client, *s3BackendBucket, *s3BackendPath)
 		default:
 			logger.Fatal("unknown state backend", zap.String("backend", *stateBackend))
 		}
@@ -124,7 +130,7 @@ func Setup(app *kingpin.Application, run runFunc, newLogger loggerFactory) {
 	})
 }
 
-func newAWSSession() *session.Session {
+func defaultAWSClientFactory() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI) {
 	var (
 		sess *session.Session
 		err  error
@@ -133,10 +139,10 @@ func newAWSSession() *session.Session {
 	once.Do(func() {
 		sess, err = session.NewSession(&aws.Config{Region: aws.String(os.Getenv("AWS_REGION"))})
 		if err != nil {
-			kingpin.Fatalf("create aws session: %s", err)
+			panic(fmt.Errorf("create aws session: %s", err))
 		}
 	})
-	return sess
+	return s3.NewClient(sess), sts.NewClient(sess), ssm.NewClient(sess), secretsmanager.NewClient(sess)
 }
 
 func defaultLogger(debug bool) (*zap.Logger, error) {

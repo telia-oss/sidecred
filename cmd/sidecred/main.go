@@ -19,7 +19,7 @@ func main() {
 		namespace = app.Flag("namespace", "Namespace to use when processing the requests.").Required().String()
 		config    = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 	)
-	cli.Setup(app, runFunc(namespace, config), nil)
+	cli.Setup(app, runFunc(namespace, config), nil, nil)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
