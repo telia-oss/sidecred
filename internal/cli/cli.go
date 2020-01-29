@@ -31,7 +31,7 @@ type (
 	loggerFactory    func(bool) (*zap.Logger, error)
 )
 
-// Setup a kingpin.Application to run the autoapprover.
+// Setup a kingpin.Application to run sidecred.
 func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) {
 	var (
 		stsProviderEnabled                = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
