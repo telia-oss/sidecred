@@ -128,7 +128,6 @@ func TestRun(t *testing.T) {
 			var (
 				store    = inprocess.New()
 				state    = sidecred.NewState()
-				backend  = &fakeStateBackend{state: state}
 				provider = &fakeProvider{}
 				logger   = zaptest.NewLogger(t)
 			)
@@ -136,10 +135,10 @@ func TestRun(t *testing.T) {
 				state.AddResource(provider.Type(), r)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, backend, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, store, logger)
 			require.NoError(t, err)
 
-			err = s.Process(tc.namespace, tc.requests)
+			err = s.Process(tc.namespace, tc.requests, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")

@@ -176,13 +176,11 @@ func BuildSecretPath(pathTemplate, namespace, name string) (string, error) {
 }
 
 // New returns a new instance of sidecred.Sidecred with the desired configuration.
-func New(providers []Provider, store SecretStore, backend StateBackend, logger *zap.Logger) (*Sidecred, error) {
+func New(providers []Provider, store SecretStore, logger *zap.Logger) (*Sidecred, error) {
 	s := &Sidecred{
-		providers:    make(map[ProviderType]Provider, len(providers)),
-		store:        store,
-		state:        &State{},
-		stateBackend: backend,
-		logger:       logger,
+		providers: make(map[ProviderType]Provider, len(providers)),
+		store:     store,
+		logger:    logger,
 	}
 	for _, p := range providers {
 		s.providers[p.Type()] = p
@@ -192,32 +190,15 @@ func New(providers []Provider, store SecretStore, backend StateBackend, logger *
 
 // Sidecred is the underlying datastructure for the service.
 type Sidecred struct {
-	providers    map[ProviderType]Provider
-	store        SecretStore
-	state        *State
-	stateBackend StateBackend
-	logger       *zap.Logger
-}
-
-// refreshState by loading it from the backend.
-func (s *Sidecred) refreshState() error {
-	state, err := s.stateBackend.Load()
-	if err != nil {
-		return err
-	}
-	s.state = state
-	return nil
+	providers map[ProviderType]Provider
+	store     SecretStore
+	logger    *zap.Logger
 }
 
 // Process a single sidecred.Request.
-func (s *Sidecred) Process(namespace string, requests []*Request) error {
+func (s *Sidecred) Process(namespace string, requests []*Request, state *State) error {
 	log := s.logger.With(zap.String("namespace", namespace))
 	log.Info("starting sidecred", zap.Int("requests", len(requests)))
-
-	if err := s.refreshState(); err != nil {
-		return fmt.Errorf("load state: %s", err)
-	}
-	defer s.stateBackend.Save(s.state)
 
 Loop:
 	for _, r := range requests {
@@ -233,7 +214,7 @@ Loop:
 		}
 		log.Info("processing request", zap.String("name", r.Name))
 
-		for _, resource := range s.state.GetResourcesByID(p.Type(), r.Name) {
+		for _, resource := range state.GetResourcesByID(p.Type(), r.Name) {
 			if r.hasValidCredentials(resource) {
 				log.Info("found existing credentials", zap.String("name", r.Name))
 				continue Loop
@@ -249,7 +230,7 @@ Loop:
 			log.Error("no credentials returned by provider")
 			continue Loop
 		}
-		s.state.AddResource(p.Type(), newResource(r, creds[0].Expiration, metadata))
+		state.AddResource(p.Type(), newResource(r, creds[0].Expiration, metadata))
 		log.Info("created new credentials", zap.Int("count", len(creds)))
 
 		for _, c := range creds {
@@ -258,42 +239,43 @@ Loop:
 				log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 				continue
 			}
-			s.state.AddSecret(s.store.Type(), newSecret(r.Name, path, c.Expiration))
+			state.AddSecret(s.store.Type(), newSecret(r.Name, path, c.Expiration))
 			log.Debug("stored credential", zap.String("path", path))
 		}
 		log.Info("done processing")
 	}
 
-	for _, state := range s.state.Providers {
-		for _, resource := range state.Resources {
+	for _, ps := range state.Providers {
+		for _, resource := range ps.Resources {
 			r := resource
 			if r.InUse && !r.Deposed && r.Expiration.After(time.Now()) {
 				continue
 			}
-			provider, ok := s.providers[state.Type]
+			provider, ok := s.providers[ps.Type]
 			if !ok {
-				log.Debug("missing provider for expired resource", zap.String("type", string(state.Type)))
+				log.Debug("missing provider for expired resource", zap.String("type", string(ps.Type)))
 				continue
 			}
 			log := s.logger.With(
-				zap.String("type", string(state.Type)),
+				zap.String("type", string(ps.Type)),
 				zap.String("id", r.ID),
 			)
 			log.Info("destroying expired resource")
 			if err := provider.Destroy(r); err != nil {
 				log.Error("destroy resource", zap.Error(err))
 			}
-			s.state.RemoveResource(provider.Type(), r)
+			state.RemoveResource(provider.Type(), r)
 		}
 	}
 
-	for _, secret := range s.state.ListOrphanedSecrets(s.store.Type()) {
+	for _, secret := range state.ListOrphanedSecrets(s.store.Type()) {
 		r := secret
 		log.Info("deleting orphaned secret", zap.String("path", r.Path))
 		if err := s.store.Delete(r.Path); err != nil {
 			log.Error("delete secret", zap.String("path", r.Path), zap.Error(err))
 		}
-		s.state.RemoveSecret(s.store.Type(), r)
+		state.RemoveSecret(s.store.Type(), r)
 	}
+
 	return nil
 }
