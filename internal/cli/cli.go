@@ -24,7 +24,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Type definitions that allow us to pass in test fakes.
+// Type definitions that allow us to reuse the CLI (flags and setup) between binaries, and
+// also so we can pass in test fakes during testing.
 type (
 	runFunc          func(*sidecred.Sidecred) error
 	awsClientFactory func() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI)
