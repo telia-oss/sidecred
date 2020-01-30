@@ -18,7 +18,7 @@ var (
 	testTime           = time.Now().Add(1 * time.Hour)
 )
 
-func TestRun(t *testing.T) {
+func TestProcess(t *testing.T) {
 	tests := []struct {
 		description          string
 		namespace            string
@@ -189,18 +189,4 @@ func (f *fakeProvider) CreateCallCount() int {
 
 func (f *fakeProvider) DestroyCallCount() int {
 	return f.destroyCallCount
-}
-
-// Fake implementation of sidecred.StateBackend.
-type fakeStateBackend struct {
-	state *sidecred.State
-}
-
-func (f *fakeStateBackend) Load() (*sidecred.State, error) {
-	return f.state, nil
-}
-
-func (f *fakeStateBackend) Save(state *sidecred.State) error {
-	f.state = state
-	return nil
 }
