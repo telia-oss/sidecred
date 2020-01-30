@@ -5,8 +5,6 @@ env:
   GO111MODULE: on
 
 vars:
-  BUILD_DIR: build
-  BUILD_BIN: sidecred
   BUILD_VERSION:
     sh: git describe --tags --candidates=1 --dirty
 
@@ -15,35 +13,43 @@ tasks:
     cmds:
       - task: test
 
-  generate:
-    desc: Generate test fakes
-    cmds:
-      - go generate ./...
-
   test:
-    desc: Run test suite
+    desc: Run tests.
     cmds:
-      - gofmt -s -l -w .
-      - go vet -v ./...
-      - go test -race -v ./...
+      - task: test-go
 
   build:
-    desc: Build the default binary
+    desc: Build binaries.
     cmds:
-      - task: test
-      - go build -o {{.BUILD_DIR}}/{{.BUILD_BIN}}{{exeExt}} -ldflags="-s -w -X=main.version={{.BUILD_VERSION}}" -v cmd/{{.BUILD_BIN}}/main.go
-    env:
-      CGO_ENABLED: "0"
-      GOOS: "{{OS}}"
-      GOARCH: "{{ARCH}}"
-
-  clean:
-    desc: Clean build directory
-    cmds:
-      - rm {{.BUILD_DIR}}/*
+      - task: go-generate
+      - task: test-go
+      - task: go-build
+        vars: {BINARY: sidecred, OS: '{{OS}}', ARCH: '{{ARCH}}'}
+      - task: go-build
+        vars: {BINARY: sidecred-lambda, OS: 'darwin', ARCH: 'amd64'}
 
   e2e:
     desc: Run E2E test suite
     cmds:
-    - task: test
-    - go test -race -v ./... -tags=e2e
+      - task: test
+      - go test -race -v ./... -tags=e2e
+
+  go-generate:
+    desc: Generate test fakes
+    cmds:
+    - go generate ./...
+
+  go-build:
+    cmds:
+    - mkdir -p build
+    - GOOS={{.OS}} GOARCH={{.ARCH}} go build -o build/{{.BINARY}}-{{.OS}}-{{.ARCH}}{{exeExt}} -ldflags="-buildid= -s -w" -trimpath -v cmd/{{.BINARY}}/main.go
+    env:
+      CGO_ENABLED: '0'
+
+  test-go:
+    desc: Run tests for all Go code.
+    silent: true
+    cmds:
+    - gofmt -s -l -w .
+    - go vet -v ./...
+    - go test -race -v ./...
