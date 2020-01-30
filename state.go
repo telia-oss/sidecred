@@ -8,10 +8,10 @@ import (
 // StateBackend is implemented by things that know how to store sidecred.State.
 type StateBackend interface {
 	// Load state from the backend. If no state exists it should be created.
-	Load() (*State, error)
+	Load(path string) (*State, error)
 
 	// Save a state to the backend.
-	Save(state *State) error
+	Save(path string, state *State) error
 }
 
 // NewState returns a new sidecred.State.
