@@ -11,21 +11,19 @@ import (
 )
 
 // New returns a file sidecred.StateBackend.
-func New(f string) sidecred.StateBackend {
-	return &fileStateBackend{file: f}
+func New() sidecred.StateBackend {
+	return &fileStateBackend{}
 }
 
-type fileStateBackend struct {
-	file string
-}
+type fileStateBackend struct{}
 
 // Load implements sidecred.StateBackend.
-func (b *fileStateBackend) Load() (*sidecred.State, error) {
-	if err := b.createFileIfNotExists(); err != nil {
+func (b *fileStateBackend) Load(file string) (*sidecred.State, error) {
+	if err := b.createFileIfNotExists(file); err != nil {
 		return nil, err
 	}
 	var state sidecred.State
-	data, err := ioutil.ReadFile(b.file)
+	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -40,21 +38,21 @@ func (b *fileStateBackend) Load() (*sidecred.State, error) {
 }
 
 // Save implements sidecred.StateBackend.
-func (b *fileStateBackend) Save(state *sidecred.State) error {
-	if err := b.createFileIfNotExists(); err != nil {
+func (b *fileStateBackend) Save(file string, state *sidecred.State) error {
+	if err := b.createFileIfNotExists(file); err != nil {
 		return err
 	}
 	o, err := json.Marshal(state)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(b.file, o, 0644)
+	return ioutil.WriteFile(file, o, 0644)
 }
 
-func (b *fileStateBackend) createFileIfNotExists() error {
-	_, err := os.Stat(b.file)
+func (b *fileStateBackend) createFileIfNotExists(file string) error {
+	_, err := os.Stat(file)
 	if os.IsNotExist(err) {
-		_, err := os.Create(b.file)
+		_, err := os.Create(file)
 		if err != nil {
 			return fmt.Errorf("state file: %s", err)
 		}

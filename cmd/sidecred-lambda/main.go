@@ -30,17 +30,23 @@ func main() {
 // Event is the expected payload sent to the Lambda.
 type Event struct {
 	Namespace  string `json:"namespace"`
-	ConfigPath string `json:"path"`
+	ConfigPath string `json:"config_path"`
+	StatePath  string `json:"state_path"`
 }
 
-func runFunc(configBucket *string) func(s *sidecred.Sidecred) error {
-	return func(s *sidecred.Sidecred) error {
+func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
+	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
 		lambda.Start(func(event Event) error {
 			requests, err := loadConfig(*configBucket, event.ConfigPath)
 			if err != nil {
 				return err
 			}
-			return s.Process(event.Namespace, requests)
+			state, err := backend.Load(event.StatePath)
+			if err != nil {
+				return err
+			}
+			defer backend.Save(event.StatePath, state)
+			return s.Process(event.Namespace, requests, state)
 		})
 		return nil
 	}

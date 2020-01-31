@@ -28,8 +28,8 @@ func TestS3Backend(t *testing.T) {
 			fakeS3 := &s3fakes.FakeS3API{}
 			fakeS3.GetObjectReturns(&s3.GetObjectOutput{Body: ioutil.NopCloser(strings.NewReader("{}"))}, nil)
 
-			b := backend.New(fakeS3, "bucket", "key")
-			state, err := b.Load()
+			b := backend.New(fakeS3, "bucket")
+			state, err := b.Load("key")
 			require.NoError(t, err)
 			assert.Equal(t, &sidecred.State{}, state)
 		})

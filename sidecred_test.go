@@ -18,7 +18,7 @@ var (
 	testTime           = time.Now().Add(1 * time.Hour)
 )
 
-func TestRun(t *testing.T) {
+func TestProcess(t *testing.T) {
 	tests := []struct {
 		description          string
 		namespace            string
@@ -128,7 +128,6 @@ func TestRun(t *testing.T) {
 			var (
 				store    = inprocess.New()
 				state    = sidecred.NewState()
-				backend  = &fakeStateBackend{state: state}
 				provider = &fakeProvider{}
 				logger   = zaptest.NewLogger(t)
 			)
@@ -136,10 +135,10 @@ func TestRun(t *testing.T) {
 				state.AddResource(provider.Type(), r)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, backend, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, store, logger)
 			require.NoError(t, err)
 
-			err = s.Process(tc.namespace, tc.requests)
+			err = s.Process(tc.namespace, tc.requests, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
@@ -190,18 +189,4 @@ func (f *fakeProvider) CreateCallCount() int {
 
 func (f *fakeProvider) DestroyCallCount() int {
 	return f.destroyCallCount
-}
-
-// Fake implementation of sidecred.StateBackend.
-type fakeStateBackend struct {
-	state *sidecred.State
-}
-
-func (f *fakeStateBackend) Load() (*sidecred.State, error) {
-	return f.state, nil
-}
-
-func (f *fakeStateBackend) Save(state *sidecred.State) error {
-	f.state = state
-	return nil
 }

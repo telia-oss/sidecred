@@ -20,11 +20,10 @@ func NewClient(sess *session.Session) S3API {
 }
 
 // New returns a new sidecred.StateBackend for STS Credentials.
-func New(client S3API, bucket, path string) sidecred.StateBackend {
+func New(client S3API, bucket string) sidecred.StateBackend {
 	b := &backend{
 		client: client,
 		bucket: bucket,
-		path:   path,
 	}
 	return b
 }
@@ -32,15 +31,14 @@ func New(client S3API, bucket, path string) sidecred.StateBackend {
 type backend struct {
 	client S3API
 	bucket string
-	path   string
 }
 
 // Load implements sidecred.StateBackend.
-func (b *backend) Load() (*sidecred.State, error) {
+func (b *backend) Load(key string) (*sidecred.State, error) {
 	var state sidecred.State
 	obj, err := b.client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(b.bucket),
-		Key:    aws.String(b.path),
+		Key:    aws.String(key),
 	})
 	if err != nil {
 		e, ok := err.(awserr.Error)
@@ -64,7 +62,7 @@ func (b *backend) Load() (*sidecred.State, error) {
 }
 
 // Save implements sidecred.StateBackend.
-func (b *backend) Save(state *sidecred.State) error {
+func (b *backend) Save(key string, state *sidecred.State) error {
 	o, err := json.Marshal(state)
 	if err != nil {
 		return err
@@ -72,7 +70,7 @@ func (b *backend) Save(state *sidecred.State) error {
 	_, err = b.client.PutObject(&s3.PutObjectInput{
 		Body:   aws.ReadSeekCloser(bytes.NewReader(o)),
 		Bucket: aws.String(b.bucket),
-		Key:    aws.String(b.path),
+		Key:    aws.String(key),
 	})
 	return err
 }

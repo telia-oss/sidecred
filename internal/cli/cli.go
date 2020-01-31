@@ -27,7 +27,7 @@ import (
 // Type definitions that allow us to reuse the CLI (flags and setup) between binaries, and
 // also so we can pass in test fakes during testing.
 type (
-	runFunc          func(*sidecred.Sidecred) error
+	runFunc          func(*sidecred.Sidecred, sidecred.StateBackend) error
 	awsClientFactory func() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI)
 	loggerFactory    func(bool) (*zap.Logger, error)
 )
@@ -48,9 +48,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		ssmStorePathTemplate              = app.Flag("ssm-store-path-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStoreKMSKeyID                  = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
 		stateBackend                      = app.Flag("state-backend", "Backend to use for storing state").Required().String()
-		fileBackendPath                   = app.Flag("file-backend-path", "Path to use for storing state in a file backend").Default("state.json").String()
 		s3BackendBucket                   = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
-		s3BackendPath                     = app.Flag("s3-backend-path", "Path to use when storing state in the S3 state backend").String()
 		debug                             = app.Flag("debug", "Enable debug logging").Bool()
 	)
 
@@ -115,19 +113,19 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		var backend sidecred.StateBackend
 		switch *stateBackend {
 		case "file":
-			backend = file.New(*fileBackendPath)
+			backend = file.New()
 		case "s3":
 			client, _, _, _ := newAWSClient()
-			backend = s3.New(client, *s3BackendBucket, *s3BackendPath)
+			backend = s3.New(client, *s3BackendBucket)
 		default:
 			logger.Fatal("unknown state backend", zap.String("backend", *stateBackend))
 		}
 
-		s, err := sidecred.New(providers, store, backend, logger)
+		s, err := sidecred.New(providers, store, logger)
 		if err != nil {
 			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
-		return run(s)
+		return run(s, backend)
 	})
 }
 

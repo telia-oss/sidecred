@@ -1,8 +1,6 @@
 package cli_test
 
 import (
-	"io/ioutil"
-	"os"
 	"strings"
 	"testing"
 
@@ -30,10 +28,6 @@ func testAWSClientFactory() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.Se
 }
 
 func TestCLI(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", "statefile.yml")
-	require.NoError(t, err)
-	defer os.Remove(tempFile.Name())
-
 	tests := []struct {
 		description string
 		command     []string
@@ -41,7 +35,7 @@ func TestCLI(t *testing.T) {
 	}{
 		{
 			description: "works",
-			command:     []string{"--state-backend", "file", "--file-backend-path", tempFile.Name(), "--secret-store-backend", "inprocess", "--debug"},
+			command:     []string{"--state-backend", "file", "--secret-store-backend", "inprocess", "--debug"},
 			expected: strings.TrimSpace(`
 {"level":"info","msg":"starting sidecred","namespace":"example","requests":1}
 {"level":"info","msg":"processing request","namespace":"example","type":"random","name":"example-random-credential"}
@@ -63,12 +57,12 @@ func TestCLI(t *testing.T) {
 				return l, nil
 			}
 
-			runFunc := func(s *sidecred.Sidecred) error {
+			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend) error {
 				return s.Process("example", []*sidecred.Request{{
 					Type:   sidecred.Randomized,
 					Name:   "example-random-credential",
 					Config: []byte(`{"length":10}`),
-				}})
+				}}, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)
