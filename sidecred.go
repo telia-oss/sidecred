@@ -246,8 +246,9 @@ Loop:
 	}
 
 	for _, ps := range state.Providers {
-		for _, resource := range ps.Resources {
-			r := resource
+		// Reverse loop to handle index changes due to deleting items in the underlying array.
+		for i := len(ps.Resources) - 1; i >= 0; i-- {
+			r := ps.Resources[i]
 			if r.InUse && !r.Deposed && r.Expiration.After(time.Now()) {
 				continue
 			}
@@ -268,8 +269,9 @@ Loop:
 		}
 	}
 
-	for _, secret := range state.ListOrphanedSecrets(s.store.Type()) {
-		r := secret
+	orphans := state.ListOrphanedSecrets(s.store.Type())
+	for i := len(orphans) - 1; i >= 0; i-- {
+		r := orphans[i]
 		log.Info("deleting orphaned secret", zap.String("path", r.Path))
 		if err := s.store.Delete(r.Path); err != nil {
 			log.Error("delete secret", zap.String("path", r.Path), zap.Error(err))
