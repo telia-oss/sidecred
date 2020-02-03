@@ -169,7 +169,7 @@ func TestProcessCleanup(t *testing.T) {
 		expectedDestroyCalls int
 	}{
 		{
-			description: "sidecred works",
+			description: "cleanup works",
 			namespace:   "team-name",
 			resources: []*sidecred.Resource{
 				{
