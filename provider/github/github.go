@@ -8,6 +8,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -158,7 +159,12 @@ func (p *provider) generateKeyPair() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	privateKey := x509.MarshalPKCS1PrivateKey(key)
+
+	privateKey := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+
 	pub, err := ssh.NewPublicKey(&key.PublicKey)
 	if err != nil {
 		return "", "", err
