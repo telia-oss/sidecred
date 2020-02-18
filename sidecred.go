@@ -62,10 +62,11 @@ type CredentialType string
 
 // Enumeration of known credential types.
 const (
-	Randomized        CredentialType = "random"
-	AWSSTS            CredentialType = "aws:sts"
-	GithubDeployKey   CredentialType = "github:deploy-key"
-	GithubAccessToken CredentialType = "github:access-token"
+	Randomized             CredentialType = "random"
+	AWSSTS                 CredentialType = "aws:sts"
+	GithubDeployKey        CredentialType = "github:deploy-key"
+	GithubAccessToken      CredentialType = "github:access-token"
+	ArtifactoryAccessToken CredentialType = "artifactory:access-token"
 )
 
 // Provider returns the sidecred.ProviderType for the credential.
@@ -77,15 +78,18 @@ func (c CredentialType) Provider() ProviderType {
 		return AWS
 	case GithubDeployKey, GithubAccessToken:
 		return Github
+	case ArtifactoryAccessToken:
+		return Artifactory
 	}
 	return ProviderType(c)
 }
 
 // Enumeration of known provider types.
 const (
-	Random ProviderType = "random"
-	AWS    ProviderType = "aws"
-	Github ProviderType = "github"
+	Random      ProviderType = "random"
+	AWS         ProviderType = "aws"
+	Github      ProviderType = "github"
+	Artifactory ProviderType = "artifactory"
 )
 
 // ProviderType ...
