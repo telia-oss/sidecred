@@ -1,9 +1,9 @@
 package sidecred
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -35,10 +35,10 @@ func (r *Request) hasValidCredentials(resource *Resource) bool {
 	if r.Name != resource.ID {
 		return false
 	}
-	if !bytes.Equal(r.Config, resource.Config) {
+	if !areConfigsEqual(r.Config, resource.Config) {
 		return false
 	}
-	if resource.Expiration.Before(time.Now()) {
+	if resource.Expiration.Before(time.Now().UTC()) {
 		return false
 	}
 	return true
@@ -55,6 +55,27 @@ func (r *Request) UnmarshalConfig(target interface{}) error {
 		return fmt.Errorf("%s request: unmarshal: %s", r.Type, err)
 	}
 	return nil
+}
+
+// areConfigsEqual is a convenience function for unmarshalling the JSON config
+// from the request and resource structures, and performing a logical deep
+// equality check instead of a byte equality check. This avoids errors due to
+// structural (but non-logical) changes due to (de)serialization.
+func areConfigsEqual(b1, b2 []byte) bool {
+	var o1 interface{}
+	var o2 interface{}
+
+	err := json.Unmarshal(b1, &o1)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(b2, &o2)
+	if err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(o1, o2)
 }
 
 // CredentialType ...
