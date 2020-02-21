@@ -35,10 +35,10 @@ func (r *Request) hasValidCredentials(resource *Resource) bool {
 	if r.Name != resource.ID {
 		return false
 	}
-	if !areConfigsEqual(r.Config, resource.Config) {
+	if !isEqualConfig(r.Config, resource.Config) {
 		return false
 	}
-	if resource.Expiration.Before(time.Now().UTC()) {
+	if resource.Expiration.Before(time.Now()) {
 		return false
 	}
 	return true
@@ -57,11 +57,11 @@ func (r *Request) UnmarshalConfig(target interface{}) error {
 	return nil
 }
 
-// areConfigsEqual is a convenience function for unmarshalling the JSON config
+// isEqualConfig is a convenience function for unmarshalling the JSON config
 // from the request and resource structures, and performing a logical deep
 // equality check instead of a byte equality check. This avoids errors due to
 // structural (but non-logical) changes due to (de)serialization.
-func areConfigsEqual(b1, b2 []byte) bool {
+func isEqualConfig(b1, b2 []byte) bool {
 	var o1 interface{}
 	var o2 interface{}
 
