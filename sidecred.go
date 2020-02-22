@@ -65,6 +65,11 @@ func isEqualConfig(b1, b2 []byte) bool {
 	var o1 interface{}
 	var o2 interface{}
 
+	// Allow the configurations to both be empty
+	if len(b1) == 0 && len(b2) == 0 {
+		return true
+	}
+
 	err := json.Unmarshal(b1, &o1)
 	if err != nil {
 		return false
