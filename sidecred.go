@@ -276,9 +276,11 @@ Loop:
 	}
 
 	for _, ps := range state.Providers {
-		for _, resource := range ps.Resources {
-			r := resource
-			if r.InUse && !r.Deposed && r.Expiration.After(time.Now()) {
+		// Reverse loop to handle index changes due to deleting items in the
+		// underlying array: https://stackoverflow.com/a/29006008
+		for i := len(ps.Resources) - 1; i >= 0; i-- {
+			resource := ps.Resources[i]
+			if resource.InUse && !resource.Deposed && resource.Expiration.After(time.Now()) {
 				continue
 			}
 			provider, ok := s.providers[ps.Type]
@@ -288,23 +290,24 @@ Loop:
 			}
 			log := s.logger.With(
 				zap.String("type", string(ps.Type)),
-				zap.String("id", r.ID),
+				zap.String("id", resource.ID),
 			)
 			log.Info("destroying expired resource")
-			if err := provider.Destroy(r); err != nil {
+			if err := provider.Destroy(resource); err != nil {
 				log.Error("destroy resource", zap.Error(err))
 			}
-			state.RemoveResource(provider.Type(), r)
+			state.RemoveResource(provider.Type(), resource)
 		}
 	}
 
-	for _, secret := range state.ListOrphanedSecrets(s.store.Type()) {
-		r := secret
-		log.Info("deleting orphaned secret", zap.String("path", r.Path))
-		if err := s.store.Delete(r.Path); err != nil {
-			log.Error("delete secret", zap.String("path", r.Path), zap.Error(err))
+	orphans := state.ListOrphanedSecrets(s.store.Type())
+	for i := len(orphans) - 1; i >= 0; i-- {
+		secret := orphans[i]
+		log.Info("deleting orphaned secret", zap.String("path", secret.Path))
+		if err := s.store.Delete(secret.Path); err != nil {
+			log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
 		}
-		state.RemoveSecret(s.store.Type(), r)
+		state.RemoveSecret(s.store.Type(), secret)
 	}
 
 	return nil
