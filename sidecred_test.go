@@ -157,6 +157,98 @@ func TestProcess(t *testing.T) {
 	}
 }
 
+// This test exists because looping over pointers as done when cleaning up expired/deposed
+// resources (and deposed secrets) can lead to surprising behaviours. The test below ensures
+// that things are working as intended.
+func TestProcessCleanup(t *testing.T) {
+	tests := []struct {
+		description          string
+		namespace            string
+		resources            []*sidecred.Resource
+		secrets              []*sidecred.Secret
+		expectedDestroyCalls int
+	}{
+		{
+			description: "cleanup works",
+			namespace:   "team-name",
+			resources: []*sidecred.Resource{
+				{
+					ID:         "r1",
+					Expiration: time.Now(),
+				},
+				{
+					ID:         "r2",
+					Expiration: time.Now(),
+				},
+				{
+					ID:         "r3",
+					Expiration: time.Now(),
+				},
+			},
+			secrets: []*sidecred.Secret{
+				{
+					ResourceID: "r1",
+					Path:       "path1",
+					Expiration: time.Now(),
+				},
+				{
+					ResourceID: "r1",
+					Path:       "path2",
+					Expiration: time.Now(),
+				},
+				{
+					ResourceID: "r2",
+					Path:       "path3",
+					Expiration: time.Now(),
+				},
+			},
+			expectedDestroyCalls: 3,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			var (
+				store    = inprocess.New()
+				state    = sidecred.NewState()
+				provider = &fakeProvider{}
+				logger   = zaptest.NewLogger(t)
+			)
+
+			for _, r := range tc.resources {
+				state.AddResource(provider.Type(), r)
+			}
+
+			for _, s := range tc.secrets {
+				state.AddSecret(store.Type(), s)
+			}
+
+			s, err := sidecred.New([]sidecred.Provider{provider}, store, logger)
+			require.NoError(t, err)
+
+			err = s.Process(tc.namespace, []*sidecred.Request{}, state)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
+
+			for _, p := range state.Providers {
+				if !assert.Equal(t, 0, len(p.Resources)) {
+					for _, s := range p.Resources {
+						assert.Nil(t, s)
+					}
+				}
+			}
+
+			for _, p := range state.Stores {
+				if !assert.Equal(t, 0, len(p.Secrets)) {
+					for _, s := range p.Secrets {
+						assert.Nil(t, s)
+					}
+				}
+			}
+		})
+	}
+}
+
 // Fake implementation of sidecred.Provider.
 type fakeProvider struct {
 	createCallCount  int

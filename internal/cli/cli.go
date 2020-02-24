@@ -9,6 +9,7 @@ import (
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/file"
 	"github.com/telia-oss/sidecred/backend/s3"
+	"github.com/telia-oss/sidecred/provider/artifactory"
 	"github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/random"
 	"github.com/telia-oss/sidecred/provider/sts"
@@ -34,21 +35,28 @@ type (
 // Setup a kingpin.Application to run sidecred.
 func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) {
 	var (
-		stsProviderEnabled                = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
-		stsProviderExternalID             = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
-		stsProviderSessionDuration        = app.Flag("sts-provider-session-duration", "Session duration for STS credentials").Default("1h").Duration()
-		githubProviderEnabled             = app.Flag("github-provider-enabled", "Enable the Github provider").Bool()
-		githubProviderIntegrationID       = app.Flag("github-provider-integration-id", "Github Apps integration ID").Int64()
-		githubProviderPrivateKey          = app.Flag("github-provider-private-key", "Github apps private key").String()
-		githubProviderKeyRotationInterval = app.Flag("github-provider-key-rotation-interval", "Rotation interval for deploy keys").Default("168h").Duration()
-		secretStoreBackend                = app.Flag("secret-store-backend", "Backend to use for secrets").Required().String()
-		inprocessStorePathTemplate        = app.Flag("inprocess-store-path-template", "Path template to use for the inprocess store").Default("{{ .Namespace }}.{{ .Name }}").String()
-		secretsManagerStorePathTemplate   = app.Flag("secrets-manager-store-path-template", "Path template to use for the secrets manager store").Default("/{{ .Namespace }}/{{ .Name }}").String()
-		ssmStorePathTemplate              = app.Flag("ssm-store-path-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
-		ssmStoreKMSKeyID                  = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
-		stateBackend                      = app.Flag("state-backend", "Backend to use for storing state").Required().String()
-		s3BackendBucket                   = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
-		debug                             = app.Flag("debug", "Enable debug logging").Bool()
+		stsProviderEnabled                 = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
+		stsProviderExternalID              = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
+		stsProviderSessionDuration         = app.Flag("sts-provider-session-duration", "Session duration for STS credentials").Default("1h").Duration()
+		githubProviderEnabled              = app.Flag("github-provider-enabled", "Enable the Github provider").Bool()
+		githubProviderIntegrationID        = app.Flag("github-provider-integration-id", "Github Apps integration ID").Int64()
+		githubProviderPrivateKey           = app.Flag("github-provider-private-key", "Github apps private key").String()
+		githubProviderKeyRotationInterval  = app.Flag("github-provider-key-rotation-interval", "Rotation interval for deploy keys").Default("168h").Duration()
+		artifactoryProviderEnabled         = app.Flag("artifactory-provider-enabled", "Enable the Artifactory provider").Bool()
+		artifactoryProviderHostname        = app.Flag("artifactory-provider-hostname", "Hostname for the Artifactory Provider").String()
+		artifactoryProviderUsername        = app.Flag("artifactory-provider-username", "Username for the Artifactory Provider").String()
+		artifactoryProviderPassword        = app.Flag("artifactory-provider-password", "Password for the Artifactory Provider").String()
+		artifactoryProviderAccessToken     = app.Flag("artifactory-provider-access-token", "Access token for the Artifactory Provider").String()
+		artifactoryProviderAPIKey          = app.Flag("artifactory-provider-api-key", "API key for the Artifactory Provider").String()
+		artifactoryProviderSessionDuration = app.Flag("artifactory-provider-session-duration", "Session duration for artifactory tokens").Default("1h").Duration()
+		secretStoreBackend                 = app.Flag("secret-store-backend", "Backend to use for secrets").Required().String()
+		inprocessStorePathTemplate         = app.Flag("inprocess-store-path-template", "Path template to use for the inprocess store").Default("{{ .Namespace }}.{{ .Name }}").String()
+		secretsManagerStorePathTemplate    = app.Flag("secrets-manager-store-path-template", "Path template to use for the secrets manager store").Default("/{{ .Namespace }}/{{ .Name }}").String()
+		ssmStorePathTemplate               = app.Flag("ssm-store-path-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
+		ssmStoreKMSKeyID                   = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
+		stateBackend                       = app.Flag("state-backend", "Backend to use for storing state").Required().String()
+		s3BackendBucket                    = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
+		debug                              = app.Flag("debug", "Enable debug logging").Bool()
 	)
 
 	app.Action(func(_ *kingpin.ParseContext) error {
@@ -81,6 +89,21 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 			}
 			providers = append(providers, github.New(app,
 				github.WithDeployKeyRotationInterval(*githubProviderKeyRotationInterval),
+			))
+		}
+
+		if *artifactoryProviderEnabled {
+			client, err := artifactory.NewClient(
+				*artifactoryProviderHostname,
+				*artifactoryProviderUsername,
+				*artifactoryProviderPassword,
+				*artifactoryProviderAccessToken,
+				*artifactoryProviderAPIKey)
+			if err != nil {
+				logger.Fatal("initialize artifactory", zap.Error(err))
+			}
+			providers = append(providers, artifactory.New(client,
+				artifactory.WithSessionDuration(*artifactoryProviderSessionDuration),
 			))
 		}
 

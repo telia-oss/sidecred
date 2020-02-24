@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go v1.28.7
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/google/go-github/v28 v28.1.1
+	github.com/jfrog/jfrog-client-go v0.7.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
 	github.com/stretchr/testify v1.4.0
 	github.com/telia-oss/aws-env v1.0.2

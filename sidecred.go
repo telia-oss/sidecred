@@ -1,9 +1,9 @@
 package sidecred
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -35,7 +35,7 @@ func (r *Request) hasValidCredentials(resource *Resource) bool {
 	if r.Name != resource.ID {
 		return false
 	}
-	if !bytes.Equal(r.Config, resource.Config) {
+	if !isEqualConfig(r.Config, resource.Config) {
 		return false
 	}
 	if resource.Expiration.Before(time.Now()) {
@@ -57,15 +57,42 @@ func (r *Request) UnmarshalConfig(target interface{}) error {
 	return nil
 }
 
+// isEqualConfig is a convenience function for unmarshalling the JSON config
+// from the request and resource structures, and performing a logical deep
+// equality check instead of a byte equality check. This avoids errors due to
+// structural (but non-logical) changes due to (de)serialization.
+func isEqualConfig(b1, b2 []byte) bool {
+	var o1 interface{}
+	var o2 interface{}
+
+	// Allow the configurations to both be empty
+	if len(b1) == 0 && len(b2) == 0 {
+		return true
+	}
+
+	err := json.Unmarshal(b1, &o1)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(b2, &o2)
+	if err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(o1, o2)
+}
+
 // CredentialType ...
 type CredentialType string
 
 // Enumeration of known credential types.
 const (
-	Randomized        CredentialType = "random"
-	AWSSTS            CredentialType = "aws:sts"
-	GithubDeployKey   CredentialType = "github:deploy-key"
-	GithubAccessToken CredentialType = "github:access-token"
+	Randomized             CredentialType = "random"
+	AWSSTS                 CredentialType = "aws:sts"
+	GithubDeployKey        CredentialType = "github:deploy-key"
+	GithubAccessToken      CredentialType = "github:access-token"
+	ArtifactoryAccessToken CredentialType = "artifactory:access-token"
 )
 
 // Provider returns the sidecred.ProviderType for the credential.
@@ -77,15 +104,18 @@ func (c CredentialType) Provider() ProviderType {
 		return AWS
 	case GithubDeployKey, GithubAccessToken:
 		return Github
+	case ArtifactoryAccessToken:
+		return Artifactory
 	}
 	return ProviderType(c)
 }
 
 // Enumeration of known provider types.
 const (
-	Random ProviderType = "random"
-	AWS    ProviderType = "aws"
-	Github ProviderType = "github"
+	Random      ProviderType = "random"
+	AWS         ProviderType = "aws"
+	Github      ProviderType = "github"
+	Artifactory ProviderType = "artifactory"
 )
 
 // ProviderType ...
@@ -246,9 +276,11 @@ Loop:
 	}
 
 	for _, ps := range state.Providers {
-		for _, resource := range ps.Resources {
-			r := resource
-			if r.InUse && !r.Deposed && r.Expiration.After(time.Now()) {
+		// Reverse loop to handle index changes due to deleting items in the
+		// underlying array: https://stackoverflow.com/a/29006008
+		for i := len(ps.Resources) - 1; i >= 0; i-- {
+			resource := ps.Resources[i]
+			if resource.InUse && !resource.Deposed && resource.Expiration.After(time.Now()) {
 				continue
 			}
 			provider, ok := s.providers[ps.Type]
@@ -258,23 +290,24 @@ Loop:
 			}
 			log := s.logger.With(
 				zap.String("type", string(ps.Type)),
-				zap.String("id", r.ID),
+				zap.String("id", resource.ID),
 			)
 			log.Info("destroying expired resource")
-			if err := provider.Destroy(r); err != nil {
+			if err := provider.Destroy(resource); err != nil {
 				log.Error("destroy resource", zap.Error(err))
 			}
-			state.RemoveResource(provider.Type(), r)
+			state.RemoveResource(provider.Type(), resource)
 		}
 	}
 
-	for _, secret := range state.ListOrphanedSecrets(s.store.Type()) {
-		r := secret
-		log.Info("deleting orphaned secret", zap.String("path", r.Path))
-		if err := s.store.Delete(r.Path); err != nil {
-			log.Error("delete secret", zap.String("path", r.Path), zap.Error(err))
+	orphans := state.ListOrphanedSecrets(s.store.Type())
+	for i := len(orphans) - 1; i >= 0; i-- {
+		secret := orphans[i]
+		log.Info("deleting orphaned secret", zap.String("path", secret.Path))
+		if err := s.store.Delete(secret.Path); err != nil {
+			log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
 		}
-		state.RemoveSecret(s.store.Type(), r)
+		state.RemoveSecret(s.store.Type(), secret)
 	}
 
 	return nil
