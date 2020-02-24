@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	environment "github.com/telia-oss/aws-env"
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/file"
 	"github.com/telia-oss/sidecred/backend/s3"
@@ -33,7 +32,7 @@ type (
 )
 
 // Setup a kingpin.Application to run sidecred.
-func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) { // New AWS Session with the default providers
+func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) {
 	var (
 		stsProviderEnabled                = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
 		stsProviderExternalID             = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
@@ -51,21 +50,6 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		s3BackendBucket                   = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
 		debug                             = app.Flag("debug", "Enable debug logging").Bool()
 	)
-
-	sess, err := session.NewSession()
-	if err != nil {
-		panic(fmt.Errorf("failed to create a new session: %s", err))
-	}
-
-	// Exchange secrets in environment variables with their values.
-	env, err := environment.New(sess)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize aws-env: %s", err))
-	}
-
-	if err := env.Populate(); err != nil {
-		panic(fmt.Errorf("failed to populate environment: %s", err))
-	}
 
 	app.Action(func(_ *kingpin.ParseContext) error {
 		if newLogger == nil {
