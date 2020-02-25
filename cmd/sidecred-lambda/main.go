@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 
+	environment "github.com/telia-oss/aws-env"
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/internal/cli"
 
@@ -23,6 +25,22 @@ func main() {
 		app    = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
 		bucket = app.Flag("config-bucket", "Name of the S3 bucket where the config is stored.").Required().String()
 	)
+
+	sess, err := session.NewSession()
+	if err != nil {
+		panic(fmt.Errorf("failed to create a new session: %s", err))
+	}
+
+	// Exchange secrets in environment variables with their values.
+	env, err := environment.New(sess)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize aws-env: %s", err))
+	}
+
+	if err := env.Populate(); err != nil {
+		panic(fmt.Errorf("failed to populate environment: %s", err))
+	}
+
 	cli.Setup(app, runFunc(bucket), nil, nil)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

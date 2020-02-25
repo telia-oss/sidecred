@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -84,11 +83,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		}
 
 		if *githubProviderEnabled {
-			privateKey, err := ioutil.ReadFile(*githubProviderPrivateKey)
-			if err != nil {
-				logger.Fatal("read private key", zap.Error(err))
-			}
-			app, err := github.NewAppsClient(*githubProviderIntegrationID, string(privateKey))
+			app, err := github.NewAppsClient(*githubProviderIntegrationID, *githubProviderPrivateKey)
 			if err != nil {
 				logger.Fatal("initialize github app", zap.Error(err))
 			}
