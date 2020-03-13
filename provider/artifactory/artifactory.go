@@ -1,4 +1,23 @@
-// Package artifactory implements a sidecred.Provider for Artifactory access token credentials.
+// Package artifactory implements a sidecred.Provider for Artifactory access
+// token credentials. See https://jfrog.com/artifactory/ for detailed
+// information.
+//
+// The provider excercises the REST API to generate time limited access tokens
+// (https://www.jfrog.com/confluence/display/JFROG/Access+Tokens). To access
+// the API, the provider itself must be authenticated. The REST API generally
+// supports the following authentication models (https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API).
+// Generally, this means we can authenticate with a dedicated username and
+// password, where the password is one of the following:
+//
+//		API Key
+//		Password
+//		Access token
+//
+// The third is most desirable, as it means that we can allocate a revocable
+// token under a specific username. Furthermore, that username can be a user
+// allocated in Artifactory itself, as part of the call to issue a token. This
+// avoids having to put an admin user's personal credentials into sidecred, or
+// the API key, which have a higher blast radius if leaked.
 package artifactory
 
 import (
@@ -15,10 +34,34 @@ import (
 )
 
 // RequestConfig ...
+// The generated secrets will be `<name>-artifactory-user` and
+// `<name>-artifactory-token`.
+//
+// The following shows an example resource configuration as YAML (note that the
+// lambda version expects JSON):
+//
+//		- type: artifactory:access-token
+//		  name: my-writer
+//		  config:
+//		    user: concourse-artifactory-user
+//		    group: artifactory-writers-group
+//		    duration: 30m
+//
+// For this specific example, the provider will create the secrets
+// `my-writer-artifactory-user` and `my-writer-artifactory-token`. The value
+// within the `my-writer-artifactory-user` secret will be
+// `concourse-artifactory-user`.
+// The secret `my-writer-artifactory-token` will contain the raw token.
 type RequestConfig struct {
-	User     string `json:"user"`
-	Group    string `json:"group"`
-	Duration int    `json:"duration"`
+	// Username to allocate the credentials under.
+	User string `json:"user"` //
+
+	// Group to associate the credentials with.
+	// The user will inherit the group permissions.
+	Group string `json:"group"`
+
+	// Request-specific override for credential duration.
+	Duration int `json:"duration"`
 }
 
 // NewClient returns a new client for ArtifactoryAPI.
