@@ -280,7 +280,7 @@ Loop:
 		// underlying array: https://stackoverflow.com/a/29006008
 		for i := len(ps.Resources) - 1; i >= 0; i-- {
 			resource := ps.Resources[i]
-			if resource.InUse && !resource.Deposed && resource.Expiration.After(time.Now()) {
+			if resource.InUse && !resource.Deposed {
 				continue
 			}
 			provider, ok := s.providers[ps.Type]
