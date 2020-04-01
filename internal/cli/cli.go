@@ -56,6 +56,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		ssmStoreKMSKeyID                   = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
 		stateBackend                       = app.Flag("state-backend", "Backend to use for storing state").Required().String()
 		s3BackendBucket                    = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
+		credentialRotationWindow           = app.Flag("credential-rotation-window", "A window in time (duration) where sidecred should rotate credentials prior to their expiration").Default("10m").Duration()
 		debug                              = app.Flag("debug", "Enable debug logging").Bool()
 	)
 
@@ -139,7 +140,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 			logger.Fatal("unknown state backend", zap.String("backend", *stateBackend))
 		}
 
-		s, err := sidecred.New(providers, store, logger)
+		s, err := sidecred.New(providers, store, *credentialRotationWindow, logger)
 		if err != nil {
 			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
