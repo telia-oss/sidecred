@@ -66,13 +66,22 @@ func TestProcess(t *testing.T) {
 			expectedCreateCalls: 0,
 		},
 		{
-			description: "replaces expired resources",
+			description: "replaces expired resources (within the rotation window)",
 			namespace:   "team-name",
 			resources: []*sidecred.Resource{{
 				ID:         testStateID,
-				Expiration: time.Now(),
+				Expiration: time.Now().Add(3 * time.Minute),
 			}},
-			expectedResources:    []*sidecred.Resource{},
+			requests: []*sidecred.Request{{
+				Type: testCredentialType,
+				Name: testStateID,
+			}},
+			expectedResources: []*sidecred.Resource{{
+				ID:         testStateID,
+				Expiration: testTime,
+				InUse:      true,
+			}},
+			expectedCreateCalls:  1,
 			expectedDestroyCalls: 1,
 		},
 		{
@@ -135,7 +144,7 @@ func TestProcess(t *testing.T) {
 				state.AddResource(provider.Type(), r)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
 			require.NoError(t, err)
 
 			err = s.Process(tc.namespace, tc.requests, state)
@@ -223,7 +232,7 @@ func TestProcessCleanup(t *testing.T) {
 				state.AddSecret(store.Type(), s)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
 			require.NoError(t, err)
 
 			err = s.Process(tc.namespace, []*sidecred.Request{}, state)

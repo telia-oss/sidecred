@@ -26,24 +26,6 @@ type Request struct {
 	Config json.RawMessage `json:"config"`
 }
 
-// hasValidCredentials returns true if there are already valid credentials
-// for the request. This is determined by the last resource state.
-func (r *Request) hasValidCredentials(resource *Resource) bool {
-	if resource.Deposed {
-		return false
-	}
-	if r.Name != resource.ID {
-		return false
-	}
-	if !isEqualConfig(r.Config, resource.Config) {
-		return false
-	}
-	if resource.Expiration.Before(time.Now()) {
-		return false
-	}
-	return true
-}
-
 // UnmarshalConfig is a convenience method for unmarshalling the JSON config into
 // a config structure for a sidecred.Provider. When no config has been passed in
 // the request, no operation is performed by this function.
@@ -55,6 +37,24 @@ func (r *Request) UnmarshalConfig(target interface{}) error {
 		return fmt.Errorf("%s request: unmarshal: %s", r.Type, err)
 	}
 	return nil
+}
+
+// hasValidCredentials returns true if there are already valid credentials
+// for the request. This is determined by the last resource state.
+func (r *Request) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
+	if resource.Deposed {
+		return false
+	}
+	if r.Name != resource.ID {
+		return false
+	}
+	if !isEqualConfig(r.Config, resource.Config) {
+		return false
+	}
+	if resource.Expiration.Add(-rotationWindow).Before(time.Now()) {
+		return false
+	}
+	return true
 }
 
 // isEqualConfig is a convenience function for unmarshalling the JSON config
@@ -206,11 +206,12 @@ func BuildSecretPath(pathTemplate, namespace, name string) (string, error) {
 }
 
 // New returns a new instance of sidecred.Sidecred with the desired configuration.
-func New(providers []Provider, store SecretStore, logger *zap.Logger) (*Sidecred, error) {
+func New(providers []Provider, store SecretStore, rotationWindow time.Duration, logger *zap.Logger) (*Sidecred, error) {
 	s := &Sidecred{
-		providers: make(map[ProviderType]Provider, len(providers)),
-		store:     store,
-		logger:    logger,
+		providers:      make(map[ProviderType]Provider, len(providers)),
+		store:          store,
+		rotationWindow: rotationWindow,
+		logger:         logger,
 	}
 	for _, p := range providers {
 		s.providers[p.Type()] = p
@@ -220,9 +221,10 @@ func New(providers []Provider, store SecretStore, logger *zap.Logger) (*Sidecred
 
 // Sidecred is the underlying datastructure for the service.
 type Sidecred struct {
-	providers map[ProviderType]Provider
-	store     SecretStore
-	logger    *zap.Logger
+	providers      map[ProviderType]Provider
+	store          SecretStore
+	rotationWindow time.Duration
+	logger         *zap.Logger
 }
 
 // Process a single sidecred.Request.
@@ -245,7 +247,7 @@ Loop:
 		log.Info("processing request", zap.String("name", r.Name))
 
 		for _, resource := range state.GetResourcesByID(p.Type(), r.Name) {
-			if r.hasValidCredentials(resource) {
+			if r.hasValidCredentials(resource, s.rotationWindow) {
 				log.Info("found existing credentials", zap.String("name", r.Name))
 				continue Loop
 			}
