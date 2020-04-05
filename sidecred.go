@@ -51,7 +51,7 @@ func (r *Request) hasValidCredentials(resource *Resource, rotationWindow time.Du
 	if !isEqualConfig(r.Config, resource.Config) {
 		return false
 	}
-	if resource.Expiration.Before(time.Now().Add(rotationWindow)) {
+	if resource.Expiration.Add(-rotationWindow).Before(time.Now()) {
 		return false
 	}
 	return true
