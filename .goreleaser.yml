@@ -29,6 +29,3 @@ checksum:
 
 archives:
 - format: binary
-
-release:
-  draft: true
