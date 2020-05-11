@@ -29,3 +29,6 @@ checksum:
 
 archives:
 - format: binary
+
+release:
+  prerelease: auto
