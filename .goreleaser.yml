@@ -1,0 +1,34 @@
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: sidecred
+    main: ./cmd/sidecred
+    ldflags: -buildid= -s -w
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+  - id: sidecred-lambda
+    main: ./cmd/sidecred-lambda
+    ldflags: -buildid= -s -w
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+checksum:
+  name_template: 'checksums.txt'
+
+archives:
+- format: binary
+
+release:
+  draft: true
