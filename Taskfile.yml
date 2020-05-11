@@ -2,11 +2,6 @@ version: "2"
 
 env:
   TERM: screen-256color
-  GO111MODULE: on
-
-vars:
-  BUILD_VERSION:
-    sh: git describe --tags --candidates=1 --dirty
 
 tasks:
   default:
