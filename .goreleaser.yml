@@ -4,7 +4,8 @@ before:
 
 builds:
   - id: sidecred
-    main: ./cmd/sidecred
+    dir: ./cmd/sidecred
+    binary: sidecred
     ldflags: -buildid= -s -w
     env:
       - CGO_ENABLED=0
@@ -15,7 +16,8 @@ builds:
     goarch:
       - amd64
   - id: sidecred-lambda
-    main: ./cmd/sidecred-lambda
+    dir: ./cmd/sidecred-lambda
+    binary: sidecred-lambda
     ldflags: -buildid= -s -w
     env:
       - CGO_ENABLED=0
@@ -24,11 +26,14 @@ builds:
     goarch:
       - amd64
 
+archives:
+  - format: binary
+    builds:
+      - sidecred
+      - sidecred-lambda
+
 checksum:
   name_template: 'checksums.txt'
-
-archives:
-- format: binary
 
 release:
   prerelease: auto
