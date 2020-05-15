@@ -27,12 +27,9 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: eu-west-1
-    - name: Get version
-      id: version
-      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
     - name: Upload Lambda
       run: |
         zip -mj "${VERSION}.zip" dist/sidecred-lambda_linux_amd64/sidecred-lambda
         aws s3 cp "${VERSION}.zip" "s3://telia-oss/sidecred-lambda/${VERSION}.zip"
       env:
-        VERSION: ${{ steps.version.outputs.VERSION }}
+        VERSION: ${{ github.event.release.tag_name }}
