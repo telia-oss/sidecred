@@ -40,7 +40,7 @@ func TestRandomProvider(t *testing.T) {
 			},
 			expected: []*sidecred.Credential{{
 				Name:        "request-name",
-				Value:       "XVlBz",
+				Value:       "1TrAn",
 				Description: "Random generated secret managed by Sidecred.",
 			}},
 		},
@@ -54,7 +54,7 @@ func TestRandomProvider(t *testing.T) {
 			},
 			expected: []*sidecred.Credential{{
 				Name:        "request-name",
-				Value:       "IMmOa",
+				Value:       "bsviM",
 				Description: "Random generated secret managed by Sidecred.",
 			}},
 		},
