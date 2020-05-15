@@ -57,11 +57,11 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 		lambda.Start(func(event Event) error {
 			requests, err := loadConfig(*configBucket, event.ConfigPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load config: %s", err)
 			}
 			state, err := backend.Load(event.StatePath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load state: %s", err)
 			}
 			defer backend.Save(event.StatePath, state)
 			return s.Process(event.Namespace, requests, state)
