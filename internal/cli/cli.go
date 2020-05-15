@@ -35,7 +35,7 @@ type (
 // Setup a kingpin.Application to run sidecred.
 func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) {
 	var (
-		randomProviderRotationInterval     = app.Flag("random-provider-rotation-interval", "Rotation interval for the random provider").Default("720h").Duration()
+		randomProviderRotationInterval     = app.Flag("random-provider-rotation-interval", "Rotation interval for the random provider").Default("168h").Duration()
 		stsProviderEnabled                 = app.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
 		stsProviderExternalID              = app.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
 		stsProviderSessionDuration         = app.Flag("sts-provider-session-duration", "Session duration for STS credentials").Default("1h").Duration()
