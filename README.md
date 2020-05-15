@@ -4,6 +4,7 @@
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/telia-oss/sidecred)
 [![latest release](https://img.shields.io/github/v/release/telia-oss/sidecred?style=flat-square)](https://github.com/telia-oss/sidecred/releases/latest)
 [![build status](https://img.shields.io/github/workflow/status/telia-oss/sidecred/workflow?label=build&logo=github&style=flat-square)](https://github.com/telia-oss/sidecred/actions?query=workflow%3Atest)
+[![go report](https://goreportcard.com/badge/github.com/telia-oss/sidecred?style=flat-square)](https://goreportcard.com/report/github.com/telia-oss/sidecred)
 
 Sidecred handles the lifecycle of your credentials "on the side". It supports multiple credential providers and secret stores, and handles the lifecycle from creation, to rotations and eventual deletion.
 
