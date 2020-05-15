@@ -2,12 +2,10 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 
-	environment "github.com/telia-oss/aws-env"
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/internal/cli"
 
@@ -16,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	environment "github.com/telia-oss/aws-env"
+	"sigs.k8s.io/yaml"
 )
 
 var version string
@@ -57,11 +57,11 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 		lambda.Start(func(event Event) error {
 			requests, err := loadConfig(*configBucket, event.ConfigPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load config: %s", err)
 			}
 			state, err := backend.Load(event.StatePath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load state: %s", err)
 			}
 			defer backend.Save(event.StatePath, state)
 			return s.Process(event.Namespace, requests, state)
@@ -77,7 +77,6 @@ func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
 	}
 	client := s3.New(sess)
 
-	var requests []*sidecred.Request
 	obj, err := client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
@@ -86,11 +85,14 @@ func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
 		return nil, err
 	}
 	defer obj.Body.Close()
-	buf := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buf, obj.Body); err != nil {
+
+	b := bytes.NewBuffer(nil)
+	if _, err := io.Copy(b, obj.Body); err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(buf.Bytes(), &requests); err != nil {
+
+	var requests []*sidecred.Request
+	if err := yaml.UnmarshalStrict(b.Bytes(), &requests); err != nil {
 		return nil, err
 	}
 	return requests, nil
