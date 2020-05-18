@@ -41,11 +41,3 @@ snapshot:
 
 release:
   prerelease: auto
-
-blobs:
-  - provider: s3
-    ids:
-      - sidecred-lambda
-    region: eu-west-1
-    bucket: telia-oss
-    folder: "{{ .ProjectName }}-lambda/{{ .Version }}"
