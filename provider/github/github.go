@@ -35,7 +35,7 @@ type AccessTokenRequestConfig struct {
 }
 
 // New returns a new sidecred.Provider for Github credentials.
-func New(app *githubapp.App, options ...option) sidecred.Provider {
+func New(app App, options ...option) sidecred.Provider {
 	p := &provider{
 		app:                 app,
 		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
@@ -197,7 +197,15 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 	return nil
 }
 
+// App is the interface that needs to be satisfied by the Github App implementation.
+//
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . App
+type App interface {
+	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
+}
+
 // RepositoriesAPI wraps the Github repositories API.
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . RepositoriesAPI
 type RepositoriesAPI interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
