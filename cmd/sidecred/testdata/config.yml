@@ -7,6 +7,10 @@
   name: itsdalmo-access-token
   config:
     owner: itsdalmo
+    repositories:
+      - dotfiles
+    permissions:
+      content: read
 - type: github:deploy-key
   name: dotfiles-deploy-key
   config:

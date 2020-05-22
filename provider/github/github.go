@@ -31,7 +31,9 @@ type DeployKeyRequestConfig struct {
 
 // AccessTokenRequestConfig ...
 type AccessTokenRequestConfig struct {
-	Owner string `json:"owner"`
+	Owner        string                 `json:"owner"`
+	Repositories []string               `json:"repositories,omitempty"`
+	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
 }
 
 // New returns a new sidecred.Provider for Github credentials.
@@ -41,6 +43,11 @@ func New(app App, options ...option) sidecred.Provider {
 		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
 		reposClientFactory: func(token string) RepositoriesAPI {
 			return githubapp.NewInstallationClient(token).V3.Repositories
+		},
+		defaultTokenPermissions: &githubapp.Permissions{
+			Contents:     github.String("read"),
+			PullRequests: github.String("write"),
+			Statuses:     github.String("write"),
 		},
 	}
 	for _, optionFunc := range options {
@@ -67,9 +74,10 @@ func WithReposClientFactory(f func(token string) RepositoriesAPI) option {
 
 // Implements sidecred.Provider for Github Credentials.
 type provider struct {
-	app                 App
-	reposClientFactory  func(token string) RepositoriesAPI
-	keyRotationInterval time.Duration
+	app                     App
+	reposClientFactory      func(token string) RepositoriesAPI
+	keyRotationInterval     time.Duration
+	defaultTokenPermissions *githubapp.Permissions
 }
 
 // Type implements sidecred.Provider.
@@ -93,12 +101,11 @@ func (p *provider) createAccessToken(request *sidecred.Request) ([]*sidecred.Cre
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, nil, &githubapp.Permissions{
-		Metadata:     github.String("read"),
-		Contents:     github.String("read"),
-		PullRequests: github.String("write"),
-		Statuses:     github.String("write"),
-	})
+	permissions := p.defaultTokenPermissions
+	if c.Permissions != nil {
+		permissions = c.Permissions
+	}
+	token, err := p.app.CreateInstallationToken(c.Owner, c.Repositories, permissions)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create access token: %s", err)
 	}
