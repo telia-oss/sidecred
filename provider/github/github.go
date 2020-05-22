@@ -67,7 +67,7 @@ func WithReposClientFactory(f func(token string) RepositoriesAPI) option {
 
 // Implements sidecred.Provider for Github Credentials.
 type provider struct {
-	app                 *githubapp.App
+	app                 App
 	reposClientFactory  func(token string) RepositoriesAPI
 	keyRotationInterval time.Duration
 }
