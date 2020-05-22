@@ -14,6 +14,7 @@ import (
 	provider "github.com/telia-oss/sidecred/provider/github"
 
 	"github.com/stretchr/testify/require"
+	"github.com/telia-oss/githubapp"
 )
 
 var (
@@ -43,7 +44,7 @@ func TestGithubProviderE2E(t *testing.T) {
 			privateKey, err := ioutil.ReadFile(appPrivateKeyFile)
 			require.NoError(t, err)
 
-			app, err := provider.NewAppsClient(integrationID, string(privateKey))
+			app, err := githubapp.NewClient(integrationID, privateKey)
 			require.NoError(t, err)
 
 			request := &sidecred.Request{

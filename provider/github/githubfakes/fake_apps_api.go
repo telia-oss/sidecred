@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	githuba "github.com/google/go-github/v28/github"
+	githuba "github.com/google/go-github/v29/github"
 	"github.com/telia-oss/sidecred/provider/github"
 )
 

@@ -20,6 +20,7 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -88,7 +89,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		}
 
 		if *githubProviderEnabled {
-			app, err := github.NewAppsClient(*githubProviderIntegrationID, *githubProviderPrivateKey)
+			app, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
 			if err != nil {
 				logger.Fatal("initialize github app", zap.Error(err))
 			}

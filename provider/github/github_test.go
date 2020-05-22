@@ -8,7 +8,7 @@ import (
 	provider "github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/github/githubfakes"
 
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v29/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -60,7 +60,7 @@ func TestGithubProvider(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			fakeAppsAPI := &githubfakes.FakeAppsAPI{}
-			fakeAppsAPI.ListInstallationsReturns([]*github.Installation{targetInstallation}, nil, nil)
+			fakeAppsAPI.ListInstallationsReturns([]*github.Installation{targetInstallation}, &github.Response{NextPage: 0}, nil)
 			fakeAppsAPI.CreateInstallationTokenReturns(targetToken, nil, nil)
 
 			fakeReposAPI := &githubfakes.FakeRepositoriesAPI{}
