@@ -16,9 +16,9 @@ import (
 
 	"github.com/telia-oss/sidecred"
 
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v29/github"
+	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/oauth2"
 )
 
 // DeployKeyRequestConfig ...
@@ -35,11 +35,13 @@ type AccessTokenRequestConfig struct {
 }
 
 // New returns a new sidecred.Provider for Github credentials.
-func New(client AppsAPI, options ...option) sidecred.Provider {
+func New(app App, options ...option) sidecred.Provider {
 	p := &provider{
-		app:                 newApp(client),
+		app:                 app,
 		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
-		reposClientFactory:  defaultReposClientFactory,
+		reposClientFactory: func(token string) RepositoriesAPI {
+			return githubapp.NewInstallationClient(token).V3.Repositories
+		},
 	}
 	for _, optionFunc := range options {
 		optionFunc(p)
@@ -63,17 +65,9 @@ func WithReposClientFactory(f func(token string) RepositoriesAPI) option {
 	}
 }
 
-func defaultReposClientFactory(token string) RepositoriesAPI {
-	oauth := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	))
-	client := github.NewClient(oauth)
-	return client.Repositories
-}
-
 // Implements sidecred.Provider for Github Credentials.
 type provider struct {
-	app                 *app
+	app                 App
 	reposClientFactory  func(token string) RepositoriesAPI
 	keyRotationInterval time.Duration
 }
@@ -99,7 +93,7 @@ func (p *provider) createAccessToken(request *sidecred.Request) ([]*sidecred.Cre
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	userToken, expiration, err := p.app.createInstallationToken(c.Owner, &github.InstallationPermissions{
+	token, err := p.app.CreateInstallationToken(c.Owner, nil, &githubapp.Permissions{
 		Metadata:     github.String("read"),
 		Contents:     github.String("read"),
 		PullRequests: github.String("write"),
@@ -110,9 +104,9 @@ func (p *provider) createAccessToken(request *sidecred.Request) ([]*sidecred.Cre
 	}
 	return []*sidecred.Credential{{
 		Name:        c.Owner + "-access-token",
-		Value:       userToken,
+		Value:       token.GetToken(),
 		Description: "Github access token managed by sidecred.",
-		Expiration:  expiration,
+		Expiration:  token.GetExpiresAt().UTC(),
 	}}, nil, nil
 }
 
@@ -121,9 +115,8 @@ func (p *provider) createDeployKey(request *sidecred.Request) ([]*sidecred.Crede
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	adminToken, _, err := p.app.createInstallationToken(c.Owner, &github.InstallationPermissions{
+	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
-		Metadata:       github.String("read"),
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("create administrator access token: %s", err)
@@ -134,7 +127,7 @@ func (p *provider) createDeployKey(request *sidecred.Request) ([]*sidecred.Crede
 		return nil, nil, fmt.Errorf("generate key pair: %s", err)
 	}
 
-	key, _, err := p.reposClientFactory(adminToken).CreateKey(context.TODO(), c.Owner, c.Repository, &github.Key{
+	key, _, err := p.reposClientFactory(token.GetToken()).CreateKey(context.TODO(), c.Owner, c.Repository, &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
@@ -190,17 +183,32 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 	if err != nil {
 		return fmt.Errorf("failed to convert key id (%s) to int: %s", s, err)
 	}
-	adminToken, _, err := p.app.createInstallationToken(c.Owner, &github.InstallationPermissions{
+	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
-		Metadata:       github.String("read"),
 	})
 	if err != nil {
 		return fmt.Errorf("create administrator access token: %s", err)
 	}
-	resp, err := p.reposClientFactory(adminToken).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
+	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
 	if err != nil && resp.StatusCode != http.StatusNotFound {
 		// Ignore error if statuscode is 404 (key not found)
 		return fmt.Errorf("delete deploy key: %s", err)
 	}
 	return nil
+}
+
+// App is the interface that needs to be satisfied by the Github App implementation.
+//
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . App
+type App interface {
+	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
+}
+
+// RepositoriesAPI wraps the Github repositories API.
+//
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . RepositoriesAPI
+type RepositoriesAPI interface {
+	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
+	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
+	DeleteKey(ctx context.Context, owner string, repo string, id int64) (*github.Response, error)
 }
