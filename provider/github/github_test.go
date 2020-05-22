@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/telia-oss/githubapp"
 	"github.com/telia-oss/sidecred"
 	provider "github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/github/githubfakes"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/go-github/v29/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	githubappfakes "github.com/telia-oss/githubapp/fakes"
 )
 
 func TestGithubProvider(t *testing.T) {
@@ -59,15 +61,25 @@ func TestGithubProvider(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			fakeAppsAPI := &githubfakes.FakeAppsAPI{}
-			fakeAppsAPI.ListInstallationsReturns([]*github.Installation{targetInstallation}, &github.Response{NextPage: 0}, nil)
+			fakeAppsAPI := &githubappfakes.FakeAppsJWTAPI{}
+			fakeAppsAPI.ListInstallationsReturns([]*github.Installation{targetInstallation}, &github.Response{}, nil)
 			fakeAppsAPI.CreateInstallationTokenReturns(targetToken, nil, nil)
+
+			fakeAppsTokenAPI := &githubappfakes.FakeAppsTokenAPI{}
+			fakeAppsTokenAPI.ListReposReturns([]*github.Repository{{
+				Name: github.String("request-repository"),
+			}}, &github.Response{}, nil)
 
 			fakeReposAPI := &githubfakes.FakeRepositoriesAPI{}
 			fakeReposAPI.CreateKeyReturns(targetKey, nil, nil)
 
-			p := provider.New(
-				fakeAppsAPI,
+			app := githubapp.New(fakeAppsAPI,
+				githubapp.WithInstallationClientFactory(func(string) githubapp.AppsTokenAPI {
+					return fakeAppsTokenAPI
+				}),
+			)
+
+			p := provider.New(app,
 				provider.WithReposClientFactory(func(string) provider.RepositoriesAPI {
 					return fakeReposAPI
 				}),

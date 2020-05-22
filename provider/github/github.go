@@ -35,9 +35,9 @@ type AccessTokenRequestConfig struct {
 }
 
 // New returns a new sidecred.Provider for Github credentials.
-func New(client AppsAPI, options ...option) sidecred.Provider {
+func New(app *githubapp.App, options ...option) sidecred.Provider {
 	p := &provider{
-		app:                 githubapp.New(client),
+		app:                 app,
 		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
 		reposClientFactory: func(token string) RepositoriesAPI {
 			return githubapp.NewInstallationClient(token).V3.Repositories
@@ -115,9 +115,8 @@ func (p *provider) createDeployKey(request *sidecred.Request) ([]*sidecred.Crede
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, nil, &githubapp.Permissions{
+	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
-		Metadata:       github.String("read"),
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("create administrator access token: %s", err)
@@ -184,9 +183,8 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 	if err != nil {
 		return fmt.Errorf("failed to convert key id (%s) to int: %s", s, err)
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, nil, &githubapp.Permissions{
+	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
-		Metadata:       github.String("read"),
 	})
 	if err != nil {
 		return fmt.Errorf("create administrator access token: %s", err)
@@ -197,13 +195,6 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 		return fmt.Errorf("delete deploy key: %s", err)
 	}
 	return nil
-}
-
-// AppsAPI wraps the Github Apps API.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . AppsAPI
-type AppsAPI interface {
-	ListInstallations(ctx context.Context, opt *github.ListOptions) ([]*github.Installation, *github.Response, error)
-	CreateInstallationToken(ctx context.Context, id int64, opt *github.InstallationTokenOptions) (*github.InstallationToken, *github.Response, error)
 }
 
 // RepositoriesAPI wraps the Github repositories API.

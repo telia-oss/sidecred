@@ -44,7 +44,7 @@ func TestGithubProviderE2E(t *testing.T) {
 			privateKey, err := ioutil.ReadFile(appPrivateKeyFile)
 			require.NoError(t, err)
 
-			app, err := githubapp.NewClient(integrationID, privateKey)
+			client, err := githubapp.NewClient(integrationID, privateKey)
 			require.NoError(t, err)
 
 			request := &sidecred.Request{
@@ -55,7 +55,7 @@ func TestGithubProviderE2E(t *testing.T) {
 				),
 			}
 
-			p := provider.New(app)
+			p := provider.New(githubapp.New(client))
 			_, metadata, err := p.Create(request)
 			require.NoError(t, err)
 

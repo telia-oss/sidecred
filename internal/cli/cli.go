@@ -89,11 +89,12 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		}
 
 		if *githubProviderEnabled {
-			app, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
+			client, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
 			if err != nil {
 				logger.Fatal("initialize github app", zap.Error(err))
 			}
-			providers = append(providers, github.New(app,
+			providers = append(providers, github.New(
+				githubapp.New(client),
 				github.WithDeployKeyRotationInterval(*githubProviderKeyRotationInterval),
 			))
 		}
