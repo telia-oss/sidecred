@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/random"
 	"github.com/telia-oss/sidecred/provider/sts"
+	githubstore "github.com/telia-oss/sidecred/store/github"
 	"github.com/telia-oss/sidecred/store/inprocess"
 	"github.com/telia-oss/sidecred/store/secretsmanager"
 	"github.com/telia-oss/sidecred/store/ssm"
@@ -56,6 +58,10 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		secretsManagerStorePathTemplate    = app.Flag("secrets-manager-store-path-template", "Path template to use for the secrets manager store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStorePathTemplate               = app.Flag("ssm-store-path-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStoreKMSKeyID                   = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
+		githubStoreRepositorySlug          = app.Flag("github-store-repository-slug", "Repository to target for the Github secrets store").String()
+		githubStorePathTemplate            = app.Flag("github-store-path-template", "Template to use for naming Github repository secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
+		githubStoreIntegrationID           = app.Flag("github-store-integration-id", "Github Apps integration ID").Int64()
+		githubStorePrivateKey              = app.Flag("github-store-private-key", "Github apps private key").String()
 		stateBackend                       = app.Flag("state-backend", "Backend to use for storing state").Required().String()
 		s3BackendBucket                    = app.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
 		rotationWindow                     = app.Flag("rotation-window", "A window in time (duration) where sidecred should rotate credentials prior to their expiration").Default("10m").Duration()
@@ -91,7 +97,7 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		if *githubProviderEnabled {
 			client, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
 			if err != nil {
-				logger.Fatal("initialize github app", zap.Error(err))
+				logger.Fatal("initialize github provider app", zap.Error(err))
 			}
 			providers = append(providers, github.New(
 				githubapp.New(client),
@@ -130,6 +136,22 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		case sidecred.Inprocess:
 			store = inprocess.New(
 				inprocess.WithPathTemplate(*inprocessStorePathTemplate),
+			)
+		case sidecred.GithubSecrets:
+			parts := strings.Split(*githubStoreRepositorySlug, "/")
+			if len(parts) != 2 {
+				logger.Fatal("invalid github store repository slug", zap.String("slug", *githubStoreRepositorySlug))
+			}
+			owner, repository := parts[0], parts[1]
+			client, err := githubapp.NewClient(*githubStoreIntegrationID, []byte(*githubStorePrivateKey))
+			if err != nil {
+				logger.Fatal("initialize github store app", zap.Error(err))
+			}
+			store = githubstore.New(
+				githubapp.New(client),
+				owner,
+				repository,
+				githubstore.WithSecretTemplate(*githubStorePathTemplate),
 			)
 		default:
 			logger.Fatal("unknown secretstore backend", zap.String("backend", *secretStoreBackend))
