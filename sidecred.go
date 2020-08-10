@@ -162,6 +162,7 @@ const (
 	Inprocess      StoreType = "inprocess"
 	SecretsManager StoreType = "secretsmanager"
 	SSM            StoreType = "ssm"
+	GithubSecrets  StoreType = "github"
 )
 
 // StoreType ...
