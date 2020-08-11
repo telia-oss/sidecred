@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -21,6 +22,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
+	"sigs.k8s.io/yaml"
 )
 
 func testAWSClientFactory() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI) {
@@ -35,14 +37,14 @@ func TestCLI(t *testing.T) {
 	}{
 		{
 			description: "works",
-			command:     []string{"--state-backend", "file", "--secret-store-backend", "inprocess", "--debug"},
+			command:     []string{"--state-backend", "file", "--debug"},
 			expected: strings.TrimSpace(`
 {"level":"info","msg":"starting sidecred","namespace":"example","requests":1}
-{"level":"info","msg":"processing request","namespace":"example","type":"random","name":"example-random-credential"}
-{"level":"info","msg":"created new credentials","namespace":"example","type":"random","count":1}
-{"level":"debug","msg":"stored credential","namespace":"example","type":"random","path":"example.example-random-credential"}
-{"level":"info","msg":"done processing","namespace":"example","type":"random"}
-			 `),
+{"level":"info","msg":"processing request","namespace":"example","type":"random","store":"inprocess","name":"example-random-credential"}
+{"level":"info","msg":"created new credentials","namespace":"example","type":"random","store":"inprocess","count":1}
+{"level":"debug","msg":"stored credential","namespace":"example","type":"random","store":"inprocess","path":"example.example-random-credential"}
+{"level":"info","msg":"done processing","namespace":"example","type":"random","store":"inprocess"}
+             `),
 		},
 	}
 
@@ -57,15 +59,29 @@ func TestCLI(t *testing.T) {
 				return l, nil
 			}
 
+			config := strings.TrimSpace(`
+---
+version: 1
+namespace: example
+
+stores:
+  - type: inprocess
+
+requests:
+  - store: inprocess
+    creds:
+    - type: random
+      name: example-random-credential
+      config:
+        length: 10
+            `)
+
 			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend) error {
-				return s.Process(&sidecred.Config{
-					Version:   1,
-					Namespace: "example",
-					Requests: []*sidecred.Request{{
-						Type:   sidecred.Randomized,
-						Name:   "example-random-credential",
-						Config: []byte(`{"length":10}`),
-					}}}, &sidecred.State{})
+				var c sidecred.Config
+				if err := yaml.UnmarshalStrict([]byte(config), &c); err != nil {
+					return fmt.Errorf("failed to unmarshal config: %s", err)
+				}
+				return s.Process(&c, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)
