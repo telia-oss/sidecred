@@ -147,7 +147,11 @@ func TestProcess(t *testing.T) {
 			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			err = s.Process(tc.namespace, tc.requests, state)
+			err = s.Process(&sidecred.Config{
+				Version:   1,
+				Namespace: tc.namespace,
+				Requests:  tc.requests,
+			}, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
@@ -235,7 +239,11 @@ func TestProcessCleanup(t *testing.T) {
 			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			err = s.Process(tc.namespace, []*sidecred.Request{}, state)
+			err = s.Process(&sidecred.Config{
+				Version:   1,
+				Namespace: tc.namespace,
+				Requests:  []*sidecred.Request{},
+			}, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
 

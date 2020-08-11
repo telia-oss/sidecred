@@ -58,11 +58,14 @@ func TestCLI(t *testing.T) {
 			}
 
 			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend) error {
-				return s.Process("example", []*sidecred.Request{{
-					Type:   sidecred.Randomized,
-					Name:   "example-random-credential",
-					Config: []byte(`{"length":10}`),
-				}}, &sidecred.State{})
+				return s.Process(&sidecred.Config{
+					Version:   1,
+					Namespace: "example",
+					Requests: []*sidecred.Request{{
+						Type:   sidecred.Randomized,
+						Name:   "example-random-credential",
+						Config: []byte(`{"length":10}`),
+					}}}, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)

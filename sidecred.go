@@ -229,12 +229,12 @@ type Sidecred struct {
 }
 
 // Process a single sidecred.Request.
-func (s *Sidecred) Process(namespace string, requests []*Request, state *State) error {
-	log := s.logger.With(zap.String("namespace", namespace))
-	log.Info("starting sidecred", zap.Int("requests", len(requests)))
+func (s *Sidecred) Process(config *Config, state *State) error {
+	log := s.logger.With(zap.String("namespace", config.Namespace))
+	log.Info("starting sidecred", zap.Int("requests", len(config.Requests)))
 
 Loop:
-	for _, r := range requests {
+	for _, r := range config.Requests {
 		log := log.With(zap.String("type", string(r.Type)))
 		if r.Name == "" {
 			log.Warn("missing name in request")
@@ -267,7 +267,7 @@ Loop:
 		log.Info("created new credentials", zap.Int("count", len(creds)))
 
 		for _, c := range creds {
-			path, err := s.store.Write(namespace, c)
+			path, err := s.store.Write(config.Namespace, c)
 			if err != nil {
 				log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 				continue
