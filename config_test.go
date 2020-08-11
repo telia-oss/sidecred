@@ -13,9 +13,11 @@ import (
 
 func TestConfig(t *testing.T) {
 	tests := []struct {
-		description string
-		config      string
-		expected    string
+		description             string
+		config                  string
+		expected                string
+		expectedRequestCount    int
+		expectedCountPerRequest []int
 	}{
 		{
 			description: "works",
@@ -36,7 +38,33 @@ requests:
         role_arn: arn:aws:iam::role/role-name
         duration: 900
             `),
-			expected: "",
+			expected:                "",
+			expectedRequestCount:    1,
+			expectedCountPerRequest: []int{1},
+		},
+		{
+			description: "supports request lists",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: cloudops
+
+stores:
+  - type: secretsmanager
+
+requests:
+  - store: secretsmanager
+    creds:
+    - type: aws:sts
+      list:
+      - name: open-source-dev-read-only
+        config:
+          role_arn: arn:aws:iam::role/role-name
+          duration: 900
+            `),
+			expected:                "",
+			expectedRequestCount:    1,
+			expectedCountPerRequest: []int{1},
 		},
 		{
 			description: "errors on duplicate requests",
@@ -60,7 +88,9 @@ requests:
     - type: aws:sts
       name: open-source-dev-read-only
             `),
-			expected: `requests[0]: creds[1]: duplicated request {store:secretsmanager name:open-source-dev-read-only}`,
+			expected:                `requests[0]: creds[1]: duplicated request {store:secretsmanager name:open-source-dev-read-only}`,
+			expectedRequestCount:    1,
+			expectedCountPerRequest: []int{2},
 		},
 	}
 
@@ -80,6 +110,10 @@ requests:
 				actual = err.Error()
 			}
 			assert.Equal(t, tc.expected, actual)
+			assert.Equal(t, tc.expectedRequestCount, len(config.Requests))
+			for i, expectedCount := range tc.expectedCountPerRequest {
+				assert.Equal(t, expectedCount, len(config.Requests[i].CredentialRequests()))
+			}
 		})
 	}
 }

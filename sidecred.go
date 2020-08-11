@@ -250,7 +250,7 @@ RequestLoop:
 		}
 
 	CredentialLoop:
-		for _, r := range request.Creds {
+		for _, r := range request.CredentialRequests() {
 			log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
 			if r.Name == "" {
 				log.Warn("missing name in request")

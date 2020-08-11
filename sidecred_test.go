@@ -259,14 +259,11 @@ func TestProcessCleanup(t *testing.T) {
 }
 
 func newConfig(namespace string, requests []*sidecred.CredentialRequest) *sidecred.Config {
-	rs := []struct {
-		Store string                        `json:"store"`
-		Creds []*sidecred.CredentialRequest `json:"creds"`
-	}{
-		{
-			Store: string(sidecred.Inprocess),
-			Creds: requests,
-		},
+	var re []*sidecred.CredentialRequestConfig
+	for _, r := range requests {
+		re = append(re, &sidecred.CredentialRequestConfig{
+			CredentialRequest: r,
+		})
 	}
 	ss := []struct {
 		Type sidecred.StoreType `json:"type"`
@@ -279,7 +276,10 @@ func newConfig(namespace string, requests []*sidecred.CredentialRequest) *sidecr
 		Version:   1,
 		Namespace: namespace,
 		Stores:    ss,
-		Requests:  rs,
+		Requests: []*sidecred.RequestConfig{{
+			Store: string(sidecred.Inprocess),
+			Creds: re,
+		}},
 	}
 }
 

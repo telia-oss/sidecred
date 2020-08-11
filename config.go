@@ -11,10 +11,7 @@ type Config struct {
 	Stores    []struct {
 		Type StoreType `json:"type"`
 	}
-	Requests []struct {
-		Store string               `json:"store"`
-		Creds []*CredentialRequest `json:"creds"`
-	}
+	Requests []*RequestConfig `json:"requests"`
 }
 
 // Validate the configuration.
@@ -48,18 +45,85 @@ func (c *Config) Validate() error {
 		if _, found := stores[request.Store]; !found {
 			return fmt.Errorf("requests[%d]: undefined store %q", i, request.Store)
 		}
-		for ii, r := range request.Creds {
-			switch r.Type {
-			case AWSSTS, GithubAccessToken, GithubDeployKey, ArtifactoryAccessToken, Randomized:
-			default:
-				return fmt.Errorf("requests[%d]: creds[%d]: unknown type %q", i, ii, string(r.Type))
+		for ii, cred := range request.Creds {
+			if err := cred.validate(); err != nil {
+				return fmt.Errorf("requests[%d]: creds[%d]: %s", i, ii, err)
 			}
-			key := requestsKey{store: request.Store, name: r.Name}
-			if _, found := requests[key]; found {
-				return fmt.Errorf("requests[%d]: creds[%d]: duplicated request %+v", i, ii, key)
+			for _, r := range cred.flatten() {
+				switch r.Type {
+				case AWSSTS, GithubAccessToken, GithubDeployKey, ArtifactoryAccessToken, Randomized:
+				default:
+					return fmt.Errorf("requests[%d]: creds[%d]: unknown type %q", i, ii, string(r.Type))
+				}
+				key := requestsKey{store: request.Store, name: r.Name}
+				if _, found := requests[key]; found {
+					return fmt.Errorf("requests[%d]: creds[%d]: duplicated request %+v", i, ii, key)
+				}
+				requests[key] = struct{}{}
 			}
-			requests[key] = struct{}{}
 		}
 	}
 	return nil
+}
+
+// RequestConfig maps credential requests to a secret store, and is part of the configuration format for Sidecred.
+type RequestConfig struct {
+	Store string                     `json:"store"`
+	Creds []*CredentialRequestConfig `json:"creds"`
+}
+
+// CredentialRequests returns the flattened list of CredentialRequest's.
+func (r *RequestConfig) CredentialRequests() (requests []*CredentialRequest) {
+	for _, cred := range r.Creds {
+		requests = append(requests, cred.flatten()...)
+	}
+	return requests
+}
+
+// CredentialRequestConfig extends sidecred.CredentialRequest by allowing it to be defined in two ways:
+// 1. As a regular CredentialRequest.
+// 2. As a list of requests that share a CredentialType (nested credential requests should omit "type"):
+//
+//  - type: aws:sts
+//    list:
+// 	    - name: credential1
+//        config ...
+// 	    - name: credential2
+//        config ...
+//
+type CredentialRequestConfig struct {
+	*CredentialRequest `json:",inline"`
+	List               []*CredentialRequest `json:"list,omitempty"`
+}
+
+// validate the configRequest.
+func (c *CredentialRequestConfig) validate() error {
+	if len(c.List) == 0 {
+		return nil // config.Validate covers the inlined request.
+	}
+	if c.CredentialRequest.Name != "" {
+		return fmt.Errorf("%q should not be specified for lists", "name")
+	}
+	if len(c.CredentialRequest.Config) > 0 {
+		return fmt.Errorf("%q should not be specified for lists", "config")
+	}
+	for i, r := range c.List {
+		if r.Type != "" {
+			return fmt.Errorf("list entry[%d]: request should not include %q", i, "type")
+		}
+	}
+	return nil
+}
+
+// flatten returns the flattened list of credential requests.
+func (c *CredentialRequestConfig) flatten() []*CredentialRequest {
+	if len(c.List) == 0 {
+		return []*CredentialRequest{c.CredentialRequest}
+	}
+	var requests []*CredentialRequest
+	for _, r := range c.List {
+		r.Type = c.CredentialRequest.Type
+		requests = append(requests, r)
+	}
+	return c.List
 }
