@@ -1,4 +1,4 @@
-// +build e2e
+// +build artifactorye2e
 
 package artifactory_test
 
@@ -57,7 +57,7 @@ func TestArtifactoryProviderE2E(t *testing.T) {
 				provider.WithSessionDuration(15*time.Minute),
 			)
 
-			_, _, err = p.Create(&sidecred.Request{
+			_, _, err = p.Create(&sidecred.CredentialRequest{
 				Type:   sidecred.ArtifactoryAccessToken,
 				Name:   "request-name",
 				Config: []byte(fmt.Sprintf(`{"user":"%s", "group":"%s"}`, artifactoryUser, artifactoryGroup)),
