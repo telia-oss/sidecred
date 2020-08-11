@@ -24,12 +24,17 @@ func TestConfig(t *testing.T) {
 version: 1
 namespace: cloudops
 
+stores:
+  - type: secretsmanager
+
 requests:
-  - type: aws:sts
-    name: open-source-dev-read-only
-    config:
-      role_arn: arn:aws:iam::role/role-name
-      duration: 900
+  - store: secretsmanager
+    creds:
+    - type: aws:sts
+      name: open-source-dev-read-only
+      config:
+        role_arn: arn:aws:iam::role/role-name
+        duration: 900
             `),
 			expected: "",
 		},
@@ -40,16 +45,22 @@ requests:
 version: 1
 namespace: cloudops
 
+stores:
+  - type: secretsmanager
+  - type: inprocess
+
 requests:
-  - type: aws:sts
-    name: open-source-dev-read-only
-    config:
-      role_arn: arn:aws:iam::role/role-name
-      duration: 900
-  - type: aws:sts
-    name: open-source-dev-read-only
+  - store: secretsmanager
+    creds:
+    - type: aws:sts
+      name: open-source-dev-read-only
+      config:
+        role_arn: arn:aws:iam::role/role-name
+        duration: 900
+    - type: aws:sts
+      name: open-source-dev-read-only
             `),
-			expected: `requests[1]: duplicate request "open-source-dev-read-only"`,
+			expected: `requests[0]: creds[1]: duplicated request {store:secretsmanager name:open-source-dev-read-only}`,
 		},
 	}
 

@@ -144,14 +144,10 @@ func TestProcess(t *testing.T) {
 				state.AddResource(provider.Type(), r)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			err = s.Process(&sidecred.Config{
-				Version:   1,
-				Namespace: tc.namespace,
-				Requests:  tc.requests,
-			}, state)
+			err = s.Process(newConfig(tc.namespace, tc.requests), state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
@@ -236,14 +232,10 @@ func TestProcessCleanup(t *testing.T) {
 				state.AddSecret(store.Type(), s)
 			}
 
-			s, err := sidecred.New([]sidecred.Provider{provider}, store, 10*time.Minute, logger)
+			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			err = s.Process(&sidecred.Config{
-				Version:   1,
-				Namespace: tc.namespace,
-				Requests:  []*sidecred.Request{},
-			}, state)
+			err = s.Process(newConfig(tc.namespace, []*sidecred.Request{}), state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
 
@@ -263,6 +255,31 @@ func TestProcessCleanup(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func newConfig(namespace string, requests []*sidecred.Request) *sidecred.Config {
+	rs := []struct {
+		Store string              `json:"store"`
+		Creds []*sidecred.Request `json:"creds"`
+	}{
+		{
+			Store: string(sidecred.Inprocess),
+			Creds: requests,
+		},
+	}
+	ss := []struct {
+		Type sidecred.StoreType `json:"type"`
+	}{
+		{
+			Type: sidecred.Inprocess,
+		},
+	}
+	return &sidecred.Config{
+		Version:   1,
+		Namespace: namespace,
+		Stores:    ss,
+		Requests:  rs,
 	}
 }
 

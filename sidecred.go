@@ -207,15 +207,18 @@ func BuildSecretPath(pathTemplate, namespace, name string) (string, error) {
 }
 
 // New returns a new instance of sidecred.Sidecred with the desired configuration.
-func New(providers []Provider, store SecretStore, rotationWindow time.Duration, logger *zap.Logger) (*Sidecred, error) {
+func New(providers []Provider, stores []SecretStore, rotationWindow time.Duration, logger *zap.Logger) (*Sidecred, error) {
 	s := &Sidecred{
 		providers:      make(map[ProviderType]Provider, len(providers)),
-		store:          store,
+		stores:         make(map[StoreType]SecretStore, len(stores)),
 		rotationWindow: rotationWindow,
 		logger:         logger,
 	}
 	for _, p := range providers {
 		s.providers[p.Type()] = p
+	}
+	for _, t := range stores {
+		s.stores[t.Type()] = t
 	}
 	return s, nil
 }
@@ -223,7 +226,7 @@ func New(providers []Provider, store SecretStore, rotationWindow time.Duration, 
 // Sidecred is the underlying datastructure for the service.
 type Sidecred struct {
 	providers      map[ProviderType]Provider
-	store          SecretStore
+	stores         map[StoreType]SecretStore
 	rotationWindow time.Duration
 	logger         *zap.Logger
 }
@@ -233,49 +236,63 @@ func (s *Sidecred) Process(config *Config, state *State) error {
 	log := s.logger.With(zap.String("namespace", config.Namespace))
 	log.Info("starting sidecred", zap.Int("requests", len(config.Requests)))
 
-Loop:
-	for _, r := range config.Requests {
-		log := log.With(zap.String("type", string(r.Type)))
-		if r.Name == "" {
-			log.Warn("missing name in request")
-			continue Loop
-		}
-		p, ok := s.providers[r.Type.Provider()]
-		if !ok {
-			log.Warn("provider not configured")
-			continue Loop
-		}
-		log.Info("processing request", zap.String("name", r.Name))
-
-		for _, resource := range state.GetResourcesByID(p.Type(), r.Name) {
-			if r.hasValidCredentials(resource, s.rotationWindow) {
-				log.Info("found existing credentials", zap.String("name", r.Name))
-				continue Loop
+RequestLoop:
+	for _, request := range config.Requests {
+		var store SecretStore
+		for _, ss := range config.Stores {
+			if string(ss.Type) == request.Store {
+				store, _ = s.stores[ss.Type]
 			}
 		}
-
-		creds, metadata, err := p.Create(r)
-		if err != nil {
-			log.Error("failed to provide credentials", zap.Error(err))
-			continue Loop
+		if store == nil {
+			log.Warn("store does not exist or is not enabled", zap.String("store", request.Store))
+			continue RequestLoop
 		}
-		if len(creds) == 0 {
-			log.Error("no credentials returned by provider")
-			continue Loop
-		}
-		state.AddResource(p.Type(), newResource(r, creds[0].Expiration, metadata))
-		log.Info("created new credentials", zap.Int("count", len(creds)))
 
-		for _, c := range creds {
-			path, err := s.store.Write(config.Namespace, c)
+	CredentialLoop:
+		for _, r := range request.Creds {
+			log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
+			if r.Name == "" {
+				log.Warn("missing name in request")
+				continue CredentialLoop
+			}
+			p, ok := s.providers[r.Type.Provider()]
+			if !ok {
+				log.Warn("provider not configured")
+				continue CredentialLoop
+			}
+			log.Info("processing request", zap.String("name", r.Name))
+
+			for _, resource := range state.GetResourcesByID(p.Type(), r.Name) {
+				if r.hasValidCredentials(resource, s.rotationWindow) {
+					log.Info("found existing credentials", zap.String("name", r.Name))
+					continue CredentialLoop
+				}
+			}
+
+			creds, metadata, err := p.Create(r)
 			if err != nil {
-				log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
-				continue
+				log.Error("failed to provide credentials", zap.Error(err))
+				continue CredentialLoop
 			}
-			state.AddSecret(s.store.Type(), newSecret(r.Name, path, c.Expiration))
-			log.Debug("stored credential", zap.String("path", path))
+			if len(creds) == 0 {
+				log.Error("no credentials returned by provider")
+				continue CredentialLoop
+			}
+			state.AddResource(p.Type(), newResource(r, creds[0].Expiration, metadata))
+			log.Info("created new credentials", zap.Int("count", len(creds)))
+
+			for _, c := range creds {
+				path, err := store.Write(config.Namespace, c)
+				if err != nil {
+					log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
+					continue
+				}
+				state.AddSecret(store.Type(), newSecret(r.Name, path, c.Expiration))
+				log.Debug("stored credential", zap.String("path", path))
+			}
+			log.Info("done processing")
 		}
-		log.Info("done processing")
 	}
 
 	for _, ps := range state.Providers {
@@ -303,15 +320,22 @@ Loop:
 		}
 	}
 
-	orphans := state.ListOrphanedSecrets(s.store.Type())
-	for i := len(orphans) - 1; i >= 0; i-- {
-		secret := orphans[i]
-		log.Info("deleting orphaned secret", zap.String("path", secret.Path))
-		if err := s.store.Delete(secret.Path); err != nil {
-			log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
+	for _, ss := range state.Stores {
+		log := log.With(zap.String("storeType", string(ss.Type)))
+		orphans := state.ListOrphanedSecrets(ss.Type)
+		for i := len(orphans) - 1; i >= 0; i-- {
+			secret := orphans[i]
+			store, ok := s.stores[ss.Type]
+			if !ok {
+				log.Debug("missing store for expired secret")
+				continue
+			}
+			log.Info("deleting orphaned secret", zap.String("path", secret.Path))
+			if err := store.Delete(secret.Path); err != nil {
+				log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
+			}
+			state.RemoveSecret(store.Type(), secret)
 		}
-		state.RemoveSecret(s.store.Type(), secret)
 	}
-
 	return nil
 }
