@@ -3,7 +3,6 @@ package sidecred
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -26,14 +25,9 @@ type CredentialRequest struct {
 	Config json.RawMessage `json:"config"`
 }
 
-// UnmarshalConfig is a convenience method for unmarshalling the JSON config into
-// a config structure for a sidecred.Provider. When no config has been passed in
-// the request, no operation is performed by this function.
+// UnmarshalConfig performs a strict JSON unmarshal of the config to the desired struct.
 func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
-	if len(r.Config) == 0 {
-		return nil
-	}
-	if err := json.Unmarshal(r.Config, target); err != nil {
+	if err := UnmarshalConfig(r.Config, target); err != nil {
 		return fmt.Errorf("%s request: unmarshal: %s", r.Type, err)
 	}
 	return nil
@@ -55,32 +49,6 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 		return false
 	}
 	return true
-}
-
-// isEqualConfig is a convenience function for unmarshalling the JSON config
-// from the request and resource structures, and performing a logical deep
-// equality check instead of a byte equality check. This avoids errors due to
-// structural (but non-logical) changes due to (de)serialization.
-func isEqualConfig(b1, b2 []byte) bool {
-	var o1 interface{}
-	var o2 interface{}
-
-	// Allow the configurations to both be empty
-	if len(b1) == 0 && len(b2) == 0 {
-		return true
-	}
-
-	err := json.Unmarshal(b1, &o1)
-	if err != nil {
-		return false
-	}
-
-	err = json.Unmarshal(b2, &o2)
-	if err != nil {
-		return false
-	}
-
-	return reflect.DeepEqual(o1, o2)
 }
 
 // CredentialType ...
@@ -174,19 +142,19 @@ type SecretStore interface {
 	Type() StoreType
 
 	// Write a sidecred.Credential to the secret store.
-	Write(namespace string, secret *Credential) (string, error)
+	Write(namespace string, secret *Credential, config json.RawMessage) (string, error)
 
 	// Read the specified secret by reference.
-	Read(path string) (string, bool, error)
+	Read(path string, config json.RawMessage) (string, bool, error)
 
 	// Delete the specified secret. Should not return an error
 	// if the secret does not exist or has already been deleted.
-	Delete(path string) error
+	Delete(path string, config json.RawMessage) error
 }
 
-// BuildSecretPath is a convenience function for building path templates.
-func BuildSecretPath(pathTemplate, namespace, name string) (string, error) {
-	t, err := template.New("path").Option("missingkey=error").Parse(pathTemplate)
+// BuildSecretTemplate is a convenience function for building secret templates.
+func BuildSecretTemplate(secretTemplate, namespace, name string) (string, error) {
+	t, err := template.New("path").Option("missingkey=error").Parse(secretTemplate)
 	if err != nil {
 		return "", err
 	}
@@ -238,14 +206,22 @@ func (s *Sidecred) Process(config *Config, state *State) error {
 
 RequestLoop:
 	for _, request := range config.Requests {
-		var store SecretStore
-		for _, ss := range config.Stores {
-			if string(ss.Type) == request.Store {
-				store, _ = s.stores[ss.Type]
+		var (
+			store       SecretStore
+			storeConfig *StoreConfig
+		)
+		for _, sc := range config.Stores {
+			if sc.alias() == request.Store {
+				storeConfig = sc
 			}
 		}
+		if _, enabled := s.stores[storeConfig.Type]; !enabled {
+			log.Warn("store type is not enabled", zap.String("storeType", request.Store))
+			continue RequestLoop
+		}
+		store = s.stores[storeConfig.Type]
 		if store == nil {
-			log.Warn("store does not exist or is not enabled", zap.String("store", request.Store))
+			log.Warn("store does not exist", zap.String("store", request.Store))
 			continue RequestLoop
 		}
 
@@ -283,12 +259,12 @@ RequestLoop:
 			log.Info("created new credentials", zap.Int("count", len(creds)))
 
 			for _, c := range creds {
-				path, err := store.Write(config.Namespace, c)
+				path, err := store.Write(config.Namespace, c, storeConfig.Config)
 				if err != nil {
 					log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 					continue
 				}
-				state.AddSecret(store.Type(), newSecret(r.Name, path, c.Expiration))
+				state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
 				log.Debug("stored credential", zap.String("path", path))
 			}
 			log.Info("done processing")
@@ -321,20 +297,20 @@ RequestLoop:
 	}
 
 	for _, ss := range state.Stores {
-		log := log.With(zap.String("storeType", string(ss.Type)))
-		orphans := state.ListOrphanedSecrets(ss.Type)
+		log := log.With(zap.String("storeType", string(ss.StoreConfig.Type)))
+		orphans := state.ListOrphanedSecrets(ss.StoreConfig)
 		for i := len(orphans) - 1; i >= 0; i-- {
 			secret := orphans[i]
-			store, ok := s.stores[ss.Type]
+			store, ok := s.stores[ss.StoreConfig.Type]
 			if !ok {
 				log.Debug("missing store for expired secret")
 				continue
 			}
 			log.Info("deleting orphaned secret", zap.String("path", secret.Path))
-			if err := store.Delete(secret.Path); err != nil {
+			if err := store.Delete(secret.Path, ss.StoreConfig.Config); err != nil {
 				log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
 			}
-			state.RemoveSecret(store.Type(), secret)
+			state.RemoveSecret(ss.StoreConfig, secret)
 		}
 	}
 	return nil

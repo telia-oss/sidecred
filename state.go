@@ -2,6 +2,7 @@ package sidecred
 
 import (
 	"encoding/json"
+	"reflect"
 	"time"
 )
 
@@ -117,13 +118,13 @@ func (s *State) RemoveResource(t ProviderType, resource *Resource) {
 }
 
 type storeState struct {
-	Type    StoreType `json:"type"`
-	Secrets []*Secret `json:"secrets"`
+	*StoreConfig `json:",inline"`
+	Secrets      []*Secret `json:"secrets"`
 }
 
 // newSecret returns a sidecred.Secret for storing in state.
-func newSecret(resourceID, path string, experation time.Time) *Secret {
-	return &Secret{ResourceID: resourceID, Path: path, Expiration: experation}
+func newSecret(resourceID, path string, expiration time.Time) *Secret {
+	return &Secret{ResourceID: resourceID, Path: path, Expiration: expiration}
 }
 
 // Secret is used to hold state about secrets stored in a secret backend.
@@ -133,22 +134,22 @@ type Secret struct {
 	Expiration time.Time `json:"expiration"`
 }
 
-func (s *State) getSecretStoreState(t StoreType) (*storeState, bool) {
+func (s *State) getSecretStoreState(c *StoreConfig) (*storeState, bool) {
 	for _, store := range s.Stores {
-		if store.Type == t {
+		if reflect.DeepEqual(store.StoreConfig, c) {
 			return store, true
 		}
 	}
 	return nil, false
 }
 
-// AddSecret adds state for the specified sidecred.SecretStore. The
+// AddSecret adds state for the specified sidecred.SecretStore alias. The
 // store will be added to state if it does not already exist, and any
 // existing state for the same secret path will be overwritten.
-func (s *State) AddSecret(t StoreType, secret *Secret) {
-	state, ok := s.getSecretStoreState(t)
+func (s *State) AddSecret(c *StoreConfig, secret *Secret) {
+	state, ok := s.getSecretStoreState(c)
 	if !ok {
-		state = &storeState{Type: t}
+		state = &storeState{StoreConfig: c}
 		s.Stores = append(s.Stores, state)
 	}
 	for i, sec := range state.Secrets {
@@ -162,14 +163,14 @@ func (s *State) AddSecret(t StoreType, secret *Secret) {
 
 // ListOrphanedSecrets lists all secrets tied to missing resource
 // IDs that should be considered orhpaned.
-func (s *State) ListOrphanedSecrets(t StoreType) []*Secret {
+func (s *State) ListOrphanedSecrets(c *StoreConfig) []*Secret {
 	validResourceIDs := make(map[string]struct{})
 	for _, p := range s.Providers {
 		for _, r := range p.Resources {
 			validResourceIDs[r.ID] = struct{}{}
 		}
 	}
-	state, ok := s.getSecretStoreState(t)
+	state, ok := s.getSecretStoreState(c)
 	if !ok {
 		return nil
 	}
@@ -184,8 +185,8 @@ func (s *State) ListOrphanedSecrets(t StoreType) []*Secret {
 }
 
 // RemoveSecret from the state.
-func (s *State) RemoveSecret(t StoreType, secret *Secret) {
-	state, ok := s.getSecretStoreState(t)
+func (s *State) RemoveSecret(c *StoreConfig, secret *Secret) {
+	state, ok := s.getSecretStoreState(c)
 	if !ok {
 		return
 	}

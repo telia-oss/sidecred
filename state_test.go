@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/telia-oss/sidecred"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/telia-oss/sidecred"
 )
 
 var (
@@ -27,10 +28,10 @@ func TestState(t *testing.T) {
 			description: "state works",
 			stateID:     testStateID,
 			expectedJSON: strings.TrimSpace(`
-{"providers":[{"type":"random","resources":[{"id":"fake.state.id","expiration":"2020-01-30T12:00:00Z","deposed":false}]}],"stores":[{"type":"inprocess","secrets":[{"resource_id":"fake.state.id","path":"fake.store.path","expiration":"2020-01-30T12:00:00Z"}]}]}
+{"providers":[{"type":"random","resources":[{"id":"fake.state.id","expiration":"2020-01-30T12:00:00Z","deposed":false}]}],"stores":[{"type":"inprocess","name":"","secrets":[{"resource_id":"fake.state.id","path":"fake.store.path","expiration":"2020-01-30T12:00:00Z"}]}]}
 `),
 			expectedFinalJSON: strings.TrimSpace(`
-{"providers":[{"type":"random","resources":[]}],"stores":[{"type":"inprocess","secrets":[]}]}
+{"providers":[{"type":"random","resources":[]}],"stores":[{"type":"inprocess","name":"","secrets":[]}]}
 `),
 		},
 	}
@@ -43,7 +44,8 @@ func TestState(t *testing.T) {
 				ID:         tc.stateID,
 				Expiration: fixedTestTime,
 			})
-			state.AddSecret(sidecred.Inprocess, &sidecred.Secret{
+			storeConfig := &sidecred.StoreConfig{Type: sidecred.Inprocess}
+			state.AddSecret(storeConfig, &sidecred.Secret{
 				ResourceID: tc.stateID,
 				Path:       "fake.store.path",
 				Expiration: fixedTestTime,
@@ -54,7 +56,7 @@ func TestState(t *testing.T) {
 			assert.Equal(t, tc.expectedJSON, string(outputJSON))
 
 			state.RemoveResource(sidecred.Random, &sidecred.Resource{ID: tc.stateID})
-			state.RemoveSecret(sidecred.Inprocess, &sidecred.Secret{Path: "fake.store.path"})
+			state.RemoveSecret(storeConfig, &sidecred.Secret{Path: "fake.store.path"})
 
 			finalOutputJSON, err := json.Marshal(state)
 			require.NoError(t, err)

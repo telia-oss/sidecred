@@ -2,6 +2,7 @@
 package secretsmanager
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/telia-oss/sidecred"
@@ -20,8 +21,8 @@ func NewClient(sess *session.Session) SecretsManagerAPI {
 // New creates a new sidecred.SecretStore using AWS Secrets Manager.
 func New(client SecretsManagerAPI, options ...option) sidecred.SecretStore {
 	s := &store{
-		client:       client,
-		pathTemplate: "/{{ .Namespace }}/{{ .Name }}",
+		client:         client,
+		secretTemplate: "/{{ .Namespace }}/{{ .Name }}",
 	}
 	for _, optionFunc := range options {
 		optionFunc(s)
@@ -31,16 +32,21 @@ func New(client SecretsManagerAPI, options ...option) sidecred.SecretStore {
 
 type option func(*store)
 
-// WithPathTemplate sets the path template when instanciating a new store.
-func WithPathTemplate(t string) option {
+// WithSecretTemplate sets the path template when instanciating a new store.
+func WithSecretTemplate(t string) option {
 	return func(s *store) {
-		s.pathTemplate = t
+		s.secretTemplate = t
 	}
 }
 
 type store struct {
-	client       SecretsManagerAPI
-	pathTemplate string
+	client         SecretsManagerAPI
+	secretTemplate string
+}
+
+// config that can be passed to the Configure method of this store.
+type config struct {
+	SecretTemplate string `json:"secret_template"`
 }
 
 // Type implements sidecred.SecretStore.
@@ -49,8 +55,12 @@ func (s *store) Type() sidecred.StoreType {
 }
 
 // Write implements sidecred.SecretStore.
-func (s *store) Write(namespace string, secret *sidecred.Credential) (string, error) {
-	path, err := sidecred.BuildSecretPath(s.pathTemplate, namespace, secret.Name)
+func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
+	c, err := s.parseConfig(config)
+	if err != nil {
+		return "", fmt.Errorf("parse config: %s", err)
+	}
+	path, err := sidecred.BuildSecretTemplate(c.SecretTemplate, namespace, secret.Name)
 	if err != nil {
 		return "", fmt.Errorf("build secret path: %s", err)
 	}
@@ -84,7 +94,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential) (string, er
 }
 
 // Read implements sidecred.SecretStore.
-func (s *store) Read(path string) (string, bool, error) {
+func (s *store) Read(path string, _ json.RawMessage) (string, bool, error) {
 	out, err := s.client.GetSecretValue(&secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(path),
 	})
@@ -103,7 +113,7 @@ func (s *store) Read(path string) (string, bool, error) {
 }
 
 // Delete implements sidecred.SecretStore.
-func (s *store) Delete(path string) error {
+func (s *store) Delete(path string, _ json.RawMessage) error {
 	_, err := s.client.DeleteSecret(&secretsmanager.DeleteSecretInput{
 		SecretId:                   aws.String(path),
 		ForceDeleteWithoutRecovery: aws.Bool(true),
@@ -119,6 +129,18 @@ func (s *store) Delete(path string) error {
 		return err
 	}
 	return nil
+}
+
+// parseConfig parses and validates the config.
+func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
+	c := &config{}
+	if err := sidecred.UnmarshalConfig(raw, &c); err != nil {
+		return nil, err
+	}
+	if c.SecretTemplate == "" {
+		c.SecretTemplate = s.secretTemplate
+	}
+	return c, nil
 }
 
 // SecretsManagerAPI wraps the interface for the API and provides a mocked implementation.

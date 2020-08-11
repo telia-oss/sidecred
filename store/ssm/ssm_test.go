@@ -1,6 +1,7 @@
 package ssm_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/telia-oss/sidecred"
@@ -15,35 +16,42 @@ import (
 
 func TestWrite(t *testing.T) {
 	var (
-		teamName     = "team-name"
-		secret       = &sidecred.Credential{Name: "secret-name", Value: "secret-value"}
-		pathTemplate = "/concourse/{{ .Namespace }}/{{ .Name }}"
-		secretPath   = "/concourse/team-name/secret-name"
+		teamName       = "team-name"
+		secret         = &sidecred.Credential{Name: "secret-name", Value: "secret-value"}
+		secretTemplate = "/concourse/{{ .Namespace }}/{{ .Name }}"
+		secretPath     = "/concourse/team-name/secret-name"
 	)
 
 	tests := []struct {
-		description   string
-		pathTemplate  string
-		secretPath    string
-		putError      error
-		expectedError error
+		description    string
+		config         json.RawMessage
+		secretTemplate string
+		secretPath     string
+		putError       error
+		expectedError  error
 	}{
 		{
-			description:  "ssm parameter store works",
-			pathTemplate: pathTemplate,
-			secretPath:   secretPath,
+			description:    "ssm parameter store works",
+			secretTemplate: secretTemplate,
+			secretPath:     secretPath,
 		},
 		{
-			description:  "supports arbitrary path templates",
-			pathTemplate: "concourse.{{ .Namespace }}.{{ .Name }}",
-			secretPath:   "concourse.team-name.secret-name",
+			description:    "supports arbitrary path templates",
+			secretTemplate: "concourse.{{ .Namespace }}.{{ .Name }}",
+			secretPath:     "concourse.team-name.secret-name",
 		},
 		{
-			description:   "propagates aws errors",
-			pathTemplate:  pathTemplate,
-			secretPath:    "",
-			putError:      awserr.New("failure", "", nil),
-			expectedError: awserr.New("failure", "", nil),
+			description:    "propagates aws errors",
+			secretTemplate: secretTemplate,
+			secretPath:     "",
+			putError:       awserr.New("failure", "", nil),
+			expectedError:  awserr.New("failure", "", nil),
+		},
+		{
+			description:    "supports setting secret template from config",
+			config:         []byte(`{"secret_template":"{{ .Namespace }}!?!{{ .Name }}"}`),
+			secretTemplate: secretTemplate,
+			secretPath:     "team-name!?!secret-name",
 		},
 	}
 
@@ -52,8 +60,8 @@ func TestWrite(t *testing.T) {
 			client := &ssmfakes.FakeSSMAPI{}
 			client.PutParameterReturns(nil, tc.putError)
 
-			store := secretstore.New(client, secretstore.WithPathTemplate(tc.pathTemplate))
-			path, err := store.Write(teamName, secret)
+			store := secretstore.New(client, secretstore.WithSecretTemplate(tc.secretTemplate))
+			path, err := store.Write(teamName, secret, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.secretPath, path)
@@ -109,7 +117,7 @@ func TestRead(t *testing.T) {
 			client.GetParameterReturns(tc.getParameterOutput, tc.getParameterError)
 
 			store := secretstore.New(client)
-			secret, found, err := store.Read(tc.secretPath)
+			secret, found, err := store.Read(tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectFound, found)
@@ -154,7 +162,7 @@ func TestDelete(t *testing.T) {
 			client.DeleteParameterReturns(nil, tc.deleteParameterError)
 
 			store := secretstore.New(client)
-			err := store.Delete(tc.secretPath)
+			err := store.Delete(tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, 1, client.DeleteParameterCallCount())

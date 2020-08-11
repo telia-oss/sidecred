@@ -1,4 +1,4 @@
-// +build artifactorye2e
+// +build e2e
 
 package artifactory_test
 

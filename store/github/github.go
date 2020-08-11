@@ -4,6 +4,7 @@ package github
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -16,11 +17,9 @@ import (
 )
 
 // New creates a new sidecred.SecretStore using Github repository secrets.
-func New(app App, owner, repository string, options ...option) sidecred.SecretStore {
+func New(app App, options ...option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
-		owner:          owner,
-		repository:     repository,
 		keys:           make(map[string]*github.PublicKey),
 		secretTemplate: "{{ .Namespace }}_{{ .Name }}",
 		actionsClientFactory: func(token string) ActionsAPI {
@@ -51,11 +50,19 @@ func WithActionsClientFactory(f func(token string) ActionsAPI) option {
 
 type store struct {
 	app                  App
-	owner                string
-	repository           string
 	keys                 map[string]*github.PublicKey
 	actionsClientFactory func(token string) ActionsAPI
 	secretTemplate       string
+}
+
+// config that can be passed to the Configure method of this store.
+type config struct {
+	SecretTemplate string `json:"secret_template"`
+	RepositorySlug string `json:"repository"`
+
+	// Fields populated when the config is parsed
+	owner      string
+	repository string
 }
 
 // Type implements sidecred.SecretStore.
@@ -64,8 +71,12 @@ func (s *store) Type() sidecred.StoreType {
 }
 
 // Write implements sidecred.SecretStore.
-func (s *store) Write(namespace string, secret *sidecred.Credential) (string, error) {
-	path, err := sidecred.BuildSecretPath(s.secretTemplate, namespace, secret.Name)
+func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
+	c, err := s.parseConfig(config)
+	if err != nil {
+		return "", fmt.Errorf("parse config: %s", err)
+	}
+	path, err := sidecred.BuildSecretTemplate(c.SecretTemplate, namespace, secret.Name)
 	if err != nil {
 		return "", fmt.Errorf("build secret path: %s", err)
 	}
@@ -74,20 +85,19 @@ func (s *store) Write(namespace string, secret *sidecred.Credential) (string, er
 	//
 	// It is not supported as of v32 of go-github:
 	// https://github.com/google/go-github/blob/v32.1.0/github/apps.go#L60
-	token, err := s.app.CreateInstallationToken(s.owner, []string{s.repository}, nil)
+	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", fmt.Errorf("create secrets access token: %s", err)
 	}
 
-	repositorySlug := s.owner + "/" + s.repository
-	if _, found := s.keys[repositorySlug]; !found {
-		key, _, err := s.actionsClientFactory(token.GetToken()).GetPublicKey(context.TODO(), s.owner, s.repository)
+	if _, found := s.keys[c.RepositorySlug]; !found {
+		key, _, err := s.actionsClientFactory(token.GetToken()).GetPublicKey(context.TODO(), c.owner, c.repository)
 		if err != nil {
 			return "", fmt.Errorf("get public key: %s", err)
 		}
-		s.keys[repositorySlug] = key
+		s.keys[c.RepositorySlug] = key
 	}
-	publicKey, _ := s.keys[repositorySlug]
+	publicKey, _ := s.keys[c.RepositorySlug]
 
 	encryptedSecret, err := s.encryptSecretValue(secret, publicKey)
 	if err != nil {
@@ -99,7 +109,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential) (string, er
 		return "", fmt.Errorf("sanitize path: %s", err)
 	}
 
-	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateSecret(context.TODO(), s.owner, s.repository, &github.EncryptedSecret{
+	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateSecret(context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
 		Name:           path,
 		KeyID:          publicKey.GetKeyID(),
 		EncryptedValue: encryptedSecret,
@@ -114,12 +124,16 @@ func (s *store) Write(namespace string, secret *sidecred.Credential) (string, er
 // Read implements sidecred.SecretStore.
 //
 // TODO: Remove Read from SecretStore interface and return structs from New etc. Then rewrite Read for tests only.
-func (s *store) Read(path string) (string, bool, error) {
-	token, err := s.app.CreateInstallationToken(s.owner, []string{s.repository}, nil)
+func (s *store) Read(path string, config json.RawMessage) (string, bool, error) {
+	c, err := s.parseConfig(config)
+	if err != nil {
+		return "", false, fmt.Errorf("parse config: %s", err)
+	}
+	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", false, fmt.Errorf("create secrets access token: %s", err)
 	}
-	secret, _, err := s.actionsClientFactory(token.GetToken()).GetSecret(context.TODO(), s.owner, s.repository, path)
+	secret, _, err := s.actionsClientFactory(token.GetToken()).GetSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		return "", false, fmt.Errorf("get secret: %s", err)
 	}
@@ -127,12 +141,16 @@ func (s *store) Read(path string) (string, bool, error) {
 }
 
 // Delete implements sidecred.SecretStore.
-func (s *store) Delete(path string) error {
-	token, err := s.app.CreateInstallationToken(s.owner, []string{s.repository}, nil)
+func (s *store) Delete(path string, config json.RawMessage) error {
+	c, err := s.parseConfig(config)
+	if err != nil {
+		return fmt.Errorf("parse config: %s", err)
+	}
+	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return fmt.Errorf("create secrets access token: %s", err)
 	}
-	resp, err := s.actionsClientFactory(token.GetToken()).DeleteSecret(context.TODO(), s.owner, s.repository, path)
+	resp, err := s.actionsClientFactory(token.GetToken()).DeleteSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
 		if resp.StatusCode != 404 {
@@ -142,6 +160,27 @@ func (s *store) Delete(path string) error {
 	return nil
 }
 
+// parseConfig parses and validates the config.
+func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
+	c := &config{}
+	if err := sidecred.UnmarshalConfig(raw, &c); err != nil {
+		return nil, err
+	}
+	if c.RepositorySlug == "" {
+		return nil, fmt.Errorf("%q must be defined", "repository")
+	}
+	parts := strings.Split(c.RepositorySlug, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid repository slug: %q", c.RepositorySlug)
+	}
+	c.owner, c.repository = parts[0], parts[1]
+	if c.SecretTemplate == "" {
+		c.SecretTemplate = s.secretTemplate
+	}
+	return c, nil
+}
+
+// encryptSecretValue encrypts the secret with a public key from Github.
 func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *github.PublicKey) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(publicKey.GetKey())
 	if err != nil {

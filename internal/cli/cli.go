@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -53,15 +52,14 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		artifactoryProviderAccessToken     = app.Flag("artifactory-provider-access-token", "Access token for the Artifactory Provider").String()
 		artifactoryProviderAPIKey          = app.Flag("artifactory-provider-api-key", "API key for the Artifactory Provider").String()
 		artifactoryProviderSessionDuration = app.Flag("artifactory-provider-session-duration", "Session duration for artifactory tokens").Default("1h").Duration()
-		inprocessStorePathTemplate         = app.Flag("inprocess-store-path-template", "Path template to use for the inprocess store").Default("{{ .Namespace }}.{{ .Name }}").String()
+		inprocessStoreSecretTemplate       = app.Flag("inprocess-store-secret-template", "Path template to use for the inprocess store").Default("{{ .Namespace }}.{{ .Name }}").String()
 		secretsManagerStoreEnabled         = app.Flag("secrets-manager-store-enabled", "Enable AWS Secrets Manager store for secrets").Bool()
-		secretsManagerStorePathTemplate    = app.Flag("secrets-manager-store-path-template", "Path template to use for the secrets manager store").Default("/{{ .Namespace }}/{{ .Name }}").String()
+		secretsManagerStoreSecretTemplate  = app.Flag("secrets-manager-store-secret-template", "Path template to use for the secrets manager store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStoreEnabled                    = app.Flag("ssm-store-enabled", "Enable AWS SSM Parameter store for secrets").Bool()
-		ssmStorePathTemplate               = app.Flag("ssm-store-path-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
+		ssmStoreSecretTemplate             = app.Flag("ssm-store-secret-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStoreKMSKeyID                   = app.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
 		githubStoreEnabled                 = app.Flag("github-store-enabled", "Enable Github repository secrets store").Bool()
-		githubStoreRepositorySlug          = app.Flag("github-store-repository-slug", "Repository to target for the Github secrets store").String()
-		githubStorePathTemplate            = app.Flag("github-store-path-template", "Template to use for naming Github repository secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
+		githubStoreSecretTemplate          = app.Flag("github-store-secret-template", "Template to use for naming Github repository secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
 		githubStoreIntegrationID           = app.Flag("github-store-integration-id", "Github Apps integration ID").Int64()
 		githubStorePrivateKey              = app.Flag("github-store-private-key", "Github apps private key").String()
 		stateBackend                       = app.Flag("state-backend", "Backend to use for storing state").Required().String()
@@ -120,36 +118,29 @@ func Setup(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory,
 		}
 
 		stores := []sidecred.SecretStore{inprocess.New(
-			inprocess.WithPathTemplate(*inprocessStorePathTemplate),
+			inprocess.WithSecretTemplate(*inprocessStoreSecretTemplate),
 		)}
 		if *secretsManagerStoreEnabled {
 			_, _, _, client := newAWSClient()
 			stores = append(stores, secretsmanager.New(client,
-				secretsmanager.WithPathTemplate(*secretsManagerStorePathTemplate),
+				secretsmanager.WithSecretTemplate(*secretsManagerStoreSecretTemplate),
 			))
 		}
 		if *ssmStoreEnabled {
 			_, _, client, _ := newAWSClient()
 			stores = append(stores, ssm.New(client,
-				ssm.WithPathTemplate(*ssmStorePathTemplate),
+				ssm.WithSecretTemplate(*ssmStoreSecretTemplate),
 				ssm.WithKMSKeyID(*ssmStoreKMSKeyID),
 			))
 		}
 		if *githubStoreEnabled {
-			parts := strings.Split(*githubStoreRepositorySlug, "/")
-			if len(parts) != 2 {
-				logger.Fatal("invalid github store repository slug", zap.String("slug", *githubStoreRepositorySlug))
-			}
-			owner, repository := parts[0], parts[1]
 			client, err := githubapp.NewClient(*githubStoreIntegrationID, []byte(*githubStorePrivateKey))
 			if err != nil {
 				logger.Fatal("initialize github store app", zap.Error(err))
 			}
 			stores = append(stores, githubstore.New(
 				githubapp.New(client),
-				owner,
-				repository,
-				githubstore.WithSecretTemplate(*githubStorePathTemplate),
+				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
 		}
 

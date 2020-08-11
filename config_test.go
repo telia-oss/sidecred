@@ -67,6 +67,32 @@ requests:
 			expectedCountPerRequest: []int{1},
 		},
 		{
+			description: "supports named stores",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: cloudops
+
+stores:
+  - type: secretsmanager
+  - type: secretsmanager
+    name: concourse
+
+requests:
+  - store: concourse
+    creds:
+    - type: aws:sts
+      list:
+      - name: open-source-dev-read-only
+        config:
+          role_arn: arn:aws:iam::role/role-name
+          duration: 900
+            `),
+			expected:                "",
+			expectedRequestCount:    1,
+			expectedCountPerRequest: []int{1},
+		},
+		{
 			description: "errors on duplicate requests",
 			config: strings.TrimSpace(`
 ---

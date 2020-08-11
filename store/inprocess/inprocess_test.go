@@ -1,6 +1,7 @@
 package inprocess_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/telia-oss/sidecred"
@@ -18,36 +19,43 @@ func TestInProcessStore(t *testing.T) {
 	)
 
 	tests := []struct {
-		description  string
-		pathTemplate string
-		secretPath   string
+		description    string
+		config         json.RawMessage
+		secretTemplate string
+		secretPath     string
 	}{
 		{
-			description:  "works as expected",
-			pathTemplate: pathTemplate,
-			secretPath:   secretPath,
+			description:    "works as expected",
+			secretTemplate: pathTemplate,
+			secretPath:     secretPath,
 		},
 		{
-			description:  "supports arbitrary path templates",
-			pathTemplate: "concourse.{{ .Namespace }}.{{ .Name }}",
-			secretPath:   "concourse.team-name.secret-name",
+			description:    "supports arbitrary path templates",
+			secretTemplate: "concourse.{{ .Namespace }}.{{ .Name }}",
+			secretPath:     "concourse.team-name.secret-name",
+		},
+		{
+			description:    "supports setting secret template from config",
+			config:         []byte(`{"secret_template":"{{ .Namespace }}!?!{{ .Name }}"}`),
+			secretTemplate: "concourse.{{ .Namespace }}.{{ .Name }}",
+			secretPath:     "team-name!?!secret-name",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			store := secretstore.New(secretstore.WithPathTemplate(tc.pathTemplate))
+			store := secretstore.New(secretstore.WithSecretTemplate(tc.secretTemplate))
 
-			path, err := store.Write(teamName, secret)
+			path, err := store.Write(teamName, secret, tc.config)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.secretPath, path)
 
-			actual, found, err := store.Read(path)
+			actual, found, err := store.Read(path, nil)
 			assert.Nil(t, err)
 			assert.Equal(t, true, found)
 			assert.Equal(t, secret.Value, actual)
 
-			err = store.Delete(path)
+			err = store.Delete(path, nil)
 			assert.Nil(t, err)
 		})
 	}
