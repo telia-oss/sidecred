@@ -55,7 +55,7 @@ type Event struct {
 func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
 		lambda.Start(func(event Event) error {
-			requests, err := loadConfig(*configBucket, event.ConfigPath)
+			config, err := loadConfig(*configBucket, event.ConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %s", err)
 			}
@@ -64,13 +64,13 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 				return fmt.Errorf("failed to load state: %s", err)
 			}
 			defer backend.Save(event.StatePath, state)
-			return s.Process(event.Namespace, requests, state)
+			return s.Process(config, state)
 		})
 		return nil
 	}
 }
 
-func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
+func loadConfig(bucket, key string) (*sidecred.Config, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, err
@@ -91,9 +91,9 @@ func loadConfig(bucket, key string) ([]*sidecred.Request, error) {
 		return nil, err
 	}
 
-	var requests []*sidecred.Request
-	if err := yaml.UnmarshalStrict(b.Bytes(), &requests); err != nil {
+	var config sidecred.Config
+	if err := yaml.UnmarshalStrict(b.Bytes(), &config); err != nil {
 		return nil, err
 	}
-	return requests, nil
+	return &config, nil
 }

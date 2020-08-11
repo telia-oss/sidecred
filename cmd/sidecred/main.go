@@ -31,8 +31,8 @@ func runFunc(namespace *string, config *string, statePath *string) func(*sidecre
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
 		}
-		var requests []*sidecred.Request
-		if err := yaml.UnmarshalStrict(b, &requests); err != nil {
+		var config sidecred.Config
+		if err := yaml.UnmarshalStrict(b, &config); err != nil {
 			return fmt.Errorf("failed to unmarshal config: %s", err)
 		}
 		state, err := backend.Load(*statePath)
@@ -40,6 +40,6 @@ func runFunc(namespace *string, config *string, statePath *string) func(*sidecre
 			return fmt.Errorf("failed to load state: %s", err)
 		}
 		defer backend.Save(*statePath, state)
-		return s.Process(*namespace, requests, state)
+		return s.Process(&config, state)
 	}
 }
