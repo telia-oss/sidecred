@@ -86,7 +86,7 @@ func (p *provider) Type() sidecred.ProviderType {
 }
 
 // Create implements sidecred.Provider.
-func (p *provider) Create(request *sidecred.Request) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	switch request.Type {
 	case sidecred.GithubDeployKey:
 		return p.createDeployKey(request)
@@ -96,7 +96,7 @@ func (p *provider) Create(request *sidecred.Request) ([]*sidecred.Credential, *s
 	return nil, nil, fmt.Errorf("invalid request: %s", request.Type)
 }
 
-func (p *provider) createAccessToken(request *sidecred.Request) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c AccessTokenRequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
@@ -117,7 +117,7 @@ func (p *provider) createAccessToken(request *sidecred.Request) ([]*sidecred.Cre
 	}}, nil, nil
 }
 
-func (p *provider) createDeployKey(request *sidecred.Request) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) createDeployKey(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c DeployKeyRequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err

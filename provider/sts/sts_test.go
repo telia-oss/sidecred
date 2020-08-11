@@ -37,7 +37,7 @@ func TestSTSProvider(t *testing.T) {
 		externalID              string
 		sessionDuration         time.Duration
 		expectedSessionDuration int64
-		request                 *sidecred.Request
+		request                 *sidecred.CredentialRequest
 		stsAPIOutput            *sts.AssumeRoleOutput
 	}{
 		{
@@ -45,7 +45,7 @@ func TestSTSProvider(t *testing.T) {
 			externalID:              "externalID",
 			sessionDuration:         30 * time.Minute,
 			expectedSessionDuration: 1800,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
 				Config: []byte(`{"role_arn": "request-role-arn"}`),
@@ -56,7 +56,7 @@ func TestSTSProvider(t *testing.T) {
 			externalID:              "externalID",
 			sessionDuration:         30 * time.Minute,
 			expectedSessionDuration: 60,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
 				Config: []byte(`{"role_arn": "request-role-arn", "duration":60}`),

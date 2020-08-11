@@ -64,7 +64,7 @@ func (p *provider) Type() sidecred.ProviderType {
 }
 
 // Provide implements sidecred.Provider.
-func (p *provider) Create(request *sidecred.Request) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err

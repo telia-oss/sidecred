@@ -23,7 +23,7 @@ func TestProcess(t *testing.T) {
 		description          string
 		namespace            string
 		resources            []*sidecred.Resource
-		requests             []*sidecred.Request
+		requests             []*sidecred.CredentialRequest
 		expectedSecrets      map[string]string
 		expectedResources    []*sidecred.Resource
 		expectedCreateCalls  int
@@ -32,7 +32,7 @@ func TestProcess(t *testing.T) {
 		{
 			description: "sidecred works",
 			namespace:   "team-name",
-			requests: []*sidecred.Request{{
+			requests: []*sidecred.CredentialRequest{{
 				Type: testCredentialType,
 				Name: testStateID,
 			}},
@@ -53,7 +53,7 @@ func TestProcess(t *testing.T) {
 				ID:         testStateID,
 				Expiration: testTime,
 			}},
-			requests: []*sidecred.Request{{
+			requests: []*sidecred.CredentialRequest{{
 				Type: testCredentialType,
 				Name: testStateID,
 			}},
@@ -72,7 +72,7 @@ func TestProcess(t *testing.T) {
 				ID:         testStateID,
 				Expiration: time.Now().Add(3 * time.Minute),
 			}},
-			requests: []*sidecred.Request{{
+			requests: []*sidecred.CredentialRequest{{
 				Type: testCredentialType,
 				Name: testStateID,
 			}},
@@ -91,7 +91,7 @@ func TestProcess(t *testing.T) {
 				ID:         testStateID,
 				Expiration: time.Now(),
 			}},
-			requests: []*sidecred.Request{{
+			requests: []*sidecred.CredentialRequest{{
 				Type: testCredentialType,
 				Name: testStateID,
 			}},
@@ -110,7 +110,7 @@ func TestProcess(t *testing.T) {
 				ID:         "other.state.id",
 				Expiration: testTime,
 			}},
-			requests:             []*sidecred.Request{},
+			requests:             []*sidecred.CredentialRequest{},
 			expectedResources:    []*sidecred.Resource{},
 			expectedDestroyCalls: 1,
 		},
@@ -123,7 +123,7 @@ func TestProcess(t *testing.T) {
 			description: "does nothing if there are no providers for the request",
 			namespace:   "team-name",
 			resources:   []*sidecred.Resource{},
-			requests: []*sidecred.Request{{
+			requests: []*sidecred.CredentialRequest{{
 				Type: sidecred.AWSSTS,
 				Name: testStateID,
 			}},
@@ -235,7 +235,7 @@ func TestProcessCleanup(t *testing.T) {
 			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			err = s.Process(newConfig(tc.namespace, []*sidecred.Request{}), state)
+			err = s.Process(newConfig(tc.namespace, []*sidecred.CredentialRequest{}), state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
 
@@ -258,10 +258,10 @@ func TestProcessCleanup(t *testing.T) {
 	}
 }
 
-func newConfig(namespace string, requests []*sidecred.Request) *sidecred.Config {
+func newConfig(namespace string, requests []*sidecred.CredentialRequest) *sidecred.Config {
 	rs := []struct {
-		Store string              `json:"store"`
-		Creds []*sidecred.Request `json:"creds"`
+		Store string                        `json:"store"`
+		Creds []*sidecred.CredentialRequest `json:"creds"`
 	}{
 		{
 			Store: string(sidecred.Inprocess),
@@ -293,7 +293,7 @@ func (f *fakeProvider) Type() sidecred.ProviderType {
 	return sidecred.ProviderType("fake")
 }
 
-func (f *fakeProvider) Create(r *sidecred.Request) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (f *fakeProvider) Create(r *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	f.createCallCount++
 	return []*sidecred.Credential{{
 			Name:       "fake-credential",

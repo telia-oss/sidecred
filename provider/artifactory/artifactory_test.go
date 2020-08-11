@@ -29,14 +29,14 @@ func TestArtifactoryProvider(t *testing.T) {
 		description             string
 		sessionDuration         time.Duration
 		expectedSessionDuration int64
-		request                 *sidecred.Request
+		request                 *sidecred.CredentialRequest
 		artifactoryAPIOutput    *services.CreateTokenResponseData
 	}{
 		{
 			description:             "artifactory provider works",
 			sessionDuration:         30 * time.Minute,
 			expectedSessionDuration: 1800,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.ArtifactoryAccessToken,
 				Name:   "request-name",
 				Config: []byte(`{"user": "some-user", "group": "some-artifactory-group"}`),
@@ -46,7 +46,7 @@ func TestArtifactoryProvider(t *testing.T) {
 			description:             "request duration overrides default",
 			sessionDuration:         30 * time.Minute,
 			expectedSessionDuration: 60,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
 				Config: []byte(`{"user": "some-user", "group": "some-artifactory-group", "duration": 60}`),

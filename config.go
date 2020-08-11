@@ -12,8 +12,8 @@ type Config struct {
 		Type StoreType `json:"type"`
 	}
 	Requests []struct {
-		Store string     `json:"store"`
-		Creds []*Request `json:"creds"`
+		Store string               `json:"store"`
+		Creds []*CredentialRequest `json:"creds"`
 	}
 }
 

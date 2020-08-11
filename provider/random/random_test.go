@@ -14,13 +14,13 @@ func TestRandomProvider(t *testing.T) {
 	tests := []struct {
 		description string
 		seed        int64
-		request     *sidecred.Request
+		request     *sidecred.CredentialRequest
 		expected    []*sidecred.Credential
 	}{
 		{
 			description: "random provider works",
 			seed:        1,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type: sidecred.Randomized,
 				Name: "request-name",
 			},
@@ -33,7 +33,7 @@ func TestRandomProvider(t *testing.T) {
 		{
 			description: "we can set the length of the random string",
 			seed:        1,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.Randomized,
 				Name:   "request-name",
 				Config: []byte(`{"length":5}`),
@@ -47,7 +47,7 @@ func TestRandomProvider(t *testing.T) {
 		{
 			description: "we can control the seed",
 			seed:        2,
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.Randomized,
 				Name:   "request-name",
 				Config: []byte(`{"length":5}`),

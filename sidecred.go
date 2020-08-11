@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Request is the root datastructure used to request credentials in Sidecred.
-type Request struct {
+// CredentialRequest is the root datastructure used to request credentials in Sidecred.
+type CredentialRequest struct {
 	// Type identifies the type of credential (and provider) for a request.
 	Type CredentialType `json:"type"`
 
@@ -29,7 +29,7 @@ type Request struct {
 // UnmarshalConfig is a convenience method for unmarshalling the JSON config into
 // a config structure for a sidecred.Provider. When no config has been passed in
 // the request, no operation is performed by this function.
-func (r *Request) UnmarshalConfig(target interface{}) error {
+func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
 	if len(r.Config) == 0 {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (r *Request) UnmarshalConfig(target interface{}) error {
 
 // hasValidCredentials returns true if there are already valid credentials
 // for the request. This is determined by the last resource state.
-func (r *Request) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
+func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
 	if resource.Deposed {
 		return false
 	}
@@ -129,7 +129,7 @@ type Provider interface {
 	// Create the requested credentials. Any sidecred.Resource
 	// returned will be stored in state and used to determine
 	// when credentials need to be rotated.
-	Create(request *Request) ([]*Credential, *Metadata, error)
+	Create(request *CredentialRequest) ([]*Credential, *Metadata, error)
 
 	// Destroy the specified resource. This is scheduled if
 	// a resource in the state has expired. For providers that
