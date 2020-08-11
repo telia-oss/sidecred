@@ -25,13 +25,13 @@ func TestGithubProvider(t *testing.T) {
 	)
 	tests := []struct {
 		description      string
-		request          *sidecred.Request
+		request          *sidecred.CredentialRequest
 		expected         []*sidecred.Credential
 		expectedMetadata *sidecred.Metadata
 	}{
 		{
 			description: "Github provider works for deploy keys",
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.GithubDeployKey,
 				Name:   "request-name",
 				Config: []byte(`{"owner":"request-owner","repository":"request-repository","title":"request-title","read_only":true}`),
@@ -44,7 +44,7 @@ func TestGithubProvider(t *testing.T) {
 		},
 		{
 			description: "Github provider works for access tokens",
-			request: &sidecred.Request{
+			request: &sidecred.CredentialRequest{
 				Type:   sidecred.GithubAccessToken,
 				Name:   "request-name",
 				Config: []byte(`{"owner":"request-owner"}`),

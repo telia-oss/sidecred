@@ -42,7 +42,7 @@ func (s *State) getProviderState(t ProviderType) (*providerState, bool) {
 }
 
 // newResource returns a new sidecred.Resource.
-func newResource(request *Request, expiration time.Time, metadata *Metadata) *Resource {
+func newResource(request *CredentialRequest, expiration time.Time, metadata *Metadata) *Resource {
 	return &Resource{
 		ID:         request.Name,
 		Config:     request.Config,
