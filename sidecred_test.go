@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	testCredentialType = sidecred.CredentialType("fake")
+	testCredentialType = sidecred.Randomized
 	testStateID        = "fake.state.id"
 	testTime           = time.Now().Add(1 * time.Hour)
 )
@@ -285,7 +285,7 @@ type fakeProvider struct {
 }
 
 func (f *fakeProvider) Type() sidecred.ProviderType {
-	return sidecred.ProviderType("fake")
+	return sidecred.Random
 }
 
 func (f *fakeProvider) Create(r *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
