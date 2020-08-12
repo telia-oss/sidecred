@@ -46,7 +46,7 @@ func TestSTSProviderE2E(t *testing.T) {
 				provider.WithExternalID("sidecred-e2e-test"),
 			)
 
-			_, _, err = p.Create(&sidecred.Request{
+			_, _, err = p.Create(&sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
 				Config: []byte(fmt.Sprintf(`{"role_arn":"%s"}`, roleARN)),

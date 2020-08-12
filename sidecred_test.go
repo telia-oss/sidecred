@@ -157,7 +157,7 @@ func TestProcess(t *testing.T) {
 			}
 
 			for k, v := range tc.expectedSecrets {
-				value, found, err := store.Read(k)
+				value, found, err := store.Read(k, sidecred.NoConfig)
 				assert.NoError(t, err)
 				assert.True(t, found, "secret exists")
 				assert.Equal(t, v, value)
@@ -229,7 +229,7 @@ func TestProcessCleanup(t *testing.T) {
 			}
 
 			for _, s := range tc.secrets {
-				state.AddSecret(store.Type(), s)
+				state.AddSecret(&sidecred.StoreConfig{Type: store.Type()}, s)
 			}
 
 			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
@@ -265,17 +265,12 @@ func newConfig(namespace string, requests []*sidecred.CredentialRequest) *sidecr
 			CredentialRequest: r,
 		})
 	}
-	ss := []struct {
-		Type sidecred.StoreType `json:"type"`
-	}{
-		{
-			Type: sidecred.Inprocess,
-		},
-	}
 	return &sidecred.Config{
 		Version:   1,
 		Namespace: namespace,
-		Stores:    ss,
+		Stores: []*sidecred.StoreConfig{{
+			Type: sidecred.Inprocess,
+		}},
 		Requests: []*sidecred.RequestConfig{{
 			Store: string(sidecred.Inprocess),
 			Creds: re,

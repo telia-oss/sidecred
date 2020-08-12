@@ -47,7 +47,7 @@ func TestGithubProviderE2E(t *testing.T) {
 			client, err := githubapp.NewClient(integrationID, privateKey)
 			require.NoError(t, err)
 
-			request := &sidecred.Request{
+			request := &sidecred.CredentialRequest{
 				Type: sidecred.GithubDeployKey,
 				Name: "itsdalmo-dotfiles-deploy-key",
 				Config: []byte(

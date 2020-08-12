@@ -3,6 +3,7 @@
 package github_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -58,24 +59,24 @@ func TestGithubStoreE2E(t *testing.T) {
 
 			store := secretstore.New(
 				githubapp.New(client),
-				targetOrganisation,
-				targetRepository,
 				secretstore.WithSecretTemplate(tc.pathTemplate),
 			)
+
+			config := []byte(fmt.Sprintf(`{"repository":"%s/%s"}`, targetOrganisation, targetRepository))
 
 			path, err := store.Write(namespace, &sidecred.Credential{
 				Name:  secretName,
 				Value: secretValue,
-			})
+			}, config)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedPath, path)
 
-			value, found, err := store.Read(path)
+			value, found, err := store.Read(path, config)
 			assert.NoError(t, err, "read secret")
 			assert.True(t, found, "found secret")
 			assert.Equal(t, tc.expectedPath, value)
 
-			if err := store.Delete(path); err != nil {
+			if err := store.Delete(path, config); err != nil {
 				t.Errorf("delete secret (%s): %s", path, err)
 			}
 		})

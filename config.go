@@ -1,17 +1,21 @@
 package sidecred
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"reflect"
 )
+
+// NoConfig represents an empty JSON Configuration (used for testing).
+var NoConfig = []byte("{}")
 
 // Config represents the user-defined configuration that should be passed to the sidecred.Sidecred.Process method.
 type Config struct {
-	Version   int    `json:"version"`
-	Namespace string `json:"namespace"`
-	Stores    []struct {
-		Type StoreType `json:"type"`
-	}
-	Requests []*RequestConfig `json:"requests"`
+	Version   int              `json:"version"`
+	Namespace string           `json:"namespace"`
+	Stores    []*StoreConfig   `json:"stores"`
+	Requests  []*RequestConfig `json:"requests"`
 }
 
 // Validate the configuration.
@@ -25,6 +29,7 @@ func (c *Config) Validate() error {
 	if len(c.Stores) == 0 {
 		return fmt.Errorf("%q must be defined", "stores")
 	}
+
 	stores := make(map[string]struct{}, len(c.Stores))
 	for i, s := range c.Stores {
 		switch s.Type {
@@ -32,10 +37,10 @@ func (c *Config) Validate() error {
 		default:
 			return fmt.Errorf("stores[%d]: unknown type %q", i, string(s.Type))
 		}
-		if _, found := stores[string(s.Type)]; found {
-			return fmt.Errorf("stores[%d]: duplicate store %q", i, string(s.Type))
+		if _, found := stores[s.alias()]; found {
+			return fmt.Errorf("stores[%d]: duplicate store %q", i, s.alias())
 		}
-		stores[string(s.Type)] = struct{}{}
+		stores[s.alias()] = struct{}{}
 	}
 
 	type requestsKey struct{ store, name string }
@@ -66,6 +71,21 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// StoreConfig is used to define the secret stores in the configuration for Sidecred.
+type StoreConfig struct {
+	Type   StoreType       `json:"type"`
+	Name   string          `json:"name"`
+	Config json.RawMessage `json:"config,omitempty"`
+}
+
+// alias returns a name that can be used to identify configured store. defaults to the StoreType.
+func (c *StoreConfig) alias() string {
+	if c.Name != "" {
+		return c.Name
+	}
+	return string(c.Type)
+}
+
 // RequestConfig maps credential requests to a secret store, and is part of the configuration format for Sidecred.
 type RequestConfig struct {
 	Store string                     `json:"store"`
@@ -73,8 +93,8 @@ type RequestConfig struct {
 }
 
 // CredentialRequests returns the flattened list of CredentialRequest's.
-func (r *RequestConfig) CredentialRequests() (requests []*CredentialRequest) {
-	for _, cred := range r.Creds {
+func (c *RequestConfig) CredentialRequests() (requests []*CredentialRequest) {
+	for _, cred := range c.Creds {
 		requests = append(requests, cred.flatten()...)
 	}
 	return requests
@@ -126,4 +146,41 @@ func (c *CredentialRequestConfig) flatten() []*CredentialRequest {
 		requests = append(requests, r)
 	}
 	return c.List
+}
+
+// UnmarshalConfig is a convenience method for performing a strict unmarshalling of a JSON config into a provided
+// structure. If config is empty, no operation is performed by this function.
+func UnmarshalConfig(config json.RawMessage, target interface{}) error {
+	if len(config) == 0 {
+		return nil
+	}
+	d := json.NewDecoder(bytes.NewReader(config))
+	d.DisallowUnknownFields()
+	return d.Decode(target)
+}
+
+// isEqualConfig is a convenience function for unmarshalling the JSON config
+// from the request and resource structures, and performing a logical deep
+// equality check instead of a byte equality check. This avoids errors due to
+// structural (but non-logical) changes due to (de)serialization.
+func isEqualConfig(b1, b2 []byte) bool {
+	var o1 interface{}
+	var o2 interface{}
+
+	// Allow the configurations to both be empty
+	if len(b1) == 0 && len(b2) == 0 {
+		return true
+	}
+
+	err := json.Unmarshal(b1, &o1)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(b2, &o2)
+	if err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(o1, o2)
 }

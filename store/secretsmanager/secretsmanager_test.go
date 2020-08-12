@@ -1,6 +1,7 @@
 package secretsmanager_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/telia-oss/sidecred"
@@ -15,15 +16,16 @@ import (
 
 func TestWrite(t *testing.T) {
 	var (
-		teamName     = "team-name"
-		secret       = &sidecred.Credential{Name: "secret-name", Value: "secret-value"}
-		pathTemplate = "/concourse/{{ .Namespace }}/{{ .Name }}"
-		secretPath   = "/concourse/team-name/secret-name"
+		teamName       = "team-name"
+		secret         = &sidecred.Credential{Name: "secret-name", Value: "secret-value"}
+		secretTemplate = "/concourse/{{ .Namespace }}/{{ .Name }}"
+		secretPath     = "/concourse/team-name/secret-name"
 	)
 
 	tests := []struct {
 		description         string
-		pathTemplate        string
+		config              json.RawMessage
+		secretTemplate      string
 		secretPath          string
 		createError         error
 		updateError         error
@@ -33,21 +35,21 @@ func TestWrite(t *testing.T) {
 	}{
 		{
 			description:         "secretsmanager store works",
-			pathTemplate:        pathTemplate,
+			secretTemplate:      secretTemplate,
 			secretPath:          secretPath,
 			expectedCreateCalls: 1,
 			expectedUpdateCalls: 1,
 		},
 		{
 			description:         "supports arbitrary path templates",
-			pathTemplate:        "concourse.{{ .Namespace }}.{{ .Name }}",
+			secretTemplate:      "concourse.{{ .Namespace }}.{{ .Name }}",
 			secretPath:          "concourse.team-name.secret-name",
 			expectedCreateCalls: 1,
 			expectedUpdateCalls: 1,
 		},
 		{
 			description:         "does not error if the secret already exists",
-			pathTemplate:        pathTemplate,
+			secretTemplate:      secretTemplate,
 			secretPath:          secretPath,
 			createError:         awserr.New(secretsmanager.ErrCodeResourceExistsException, "", nil),
 			expectedError:       nil,
@@ -56,7 +58,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			description:         "propagates errors when creating the secret",
-			pathTemplate:        pathTemplate,
+			secretTemplate:      secretTemplate,
 			secretPath:          "",
 			createError:         awserr.New("failure", "", nil),
 			expectedError:       awserr.New("failure", "", nil),
@@ -64,9 +66,17 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			description:         "propagates errors when updating the secret",
-			pathTemplate:        pathTemplate,
+			secretTemplate:      secretTemplate,
 			updateError:         awserr.New("failure", "", nil),
 			expectedError:       awserr.New("failure", "", nil),
+			expectedCreateCalls: 1,
+			expectedUpdateCalls: 1,
+		},
+		{
+			description:         "supports setting secret template from config",
+			config:              []byte(`{"secret_template":"{{ .Namespace }}!?!{{ .Name }}"}`),
+			secretTemplate:      secretTemplate,
+			secretPath:          "team-name!?!secret-name",
 			expectedCreateCalls: 1,
 			expectedUpdateCalls: 1,
 		},
@@ -78,8 +88,8 @@ func TestWrite(t *testing.T) {
 			client.CreateSecretReturns(nil, tc.createError)
 			client.UpdateSecretReturns(nil, tc.updateError)
 
-			store := secretstore.New(client, secretstore.WithPathTemplate(tc.pathTemplate))
-			path, err := store.Write(teamName, secret)
+			store := secretstore.New(client, secretstore.WithSecretTemplate(tc.secretTemplate))
+			path, err := store.Write(teamName, secret, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.secretPath, path)
@@ -134,7 +144,7 @@ func TestRead(t *testing.T) {
 			client.GetSecretValueReturns(tc.getSecretOutput, tc.getSecretError)
 
 			store := secretstore.New(client)
-			secret, found, err := store.Read(tc.secretPath)
+			secret, found, err := store.Read(tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectFound, found)
@@ -179,7 +189,7 @@ func TestDelete(t *testing.T) {
 			client.DeleteSecretReturns(nil, tc.deleteSecretError)
 
 			store := secretstore.New(client)
-			err := store.Delete(tc.secretPath)
+			err := store.Delete(tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, 1, client.DeleteSecretCallCount())

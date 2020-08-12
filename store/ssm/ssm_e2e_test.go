@@ -46,22 +46,22 @@ func TestSecretsManagerStoreE2E(t *testing.T) {
 
 			store := secretstore.New(
 				secretstore.NewClient(sess),
-				secretstore.WithPathTemplate(tc.pathTemplate),
+				secretstore.WithSecretTemplate(tc.pathTemplate),
 			)
 
 			path, err := store.Write(namespace, &sidecred.Credential{
 				Name:  secretName,
 				Value: secretValue,
-			})
+			}, nil)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedPath, path)
 
-			value, found, err := store.Read(path)
+			value, found, err := store.Read(path, nil)
 			assert.NoError(t, err, "read secret")
 			assert.True(t, found, "found secret")
 			assert.Equal(t, secretValue, value)
 
-			if err := store.Delete(path); err != nil {
+			if err := store.Delete(path, nil); err != nil {
 				t.Errorf("delete secret (%s): %s", path, err)
 			}
 		})
