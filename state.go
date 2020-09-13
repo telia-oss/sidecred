@@ -45,6 +45,7 @@ func (s *State) getProviderState(t ProviderType) (*providerState, bool) {
 // newResource returns a new sidecred.Resource.
 func newResource(request *CredentialRequest, store string, expiration time.Time, metadata *Metadata) *Resource {
 	return &Resource{
+		Type:       request.Type,
 		ID:         request.Name,
 		Store:      store,
 		Config:     request.Config,
@@ -58,6 +59,7 @@ func newResource(request *CredentialRequest, store string, expiration time.Time,
 // Resource represents a resource provisioned by a sidecred.Provider as
 // part of creating the requested credentials.
 type Resource struct {
+	Type       CredentialType  `json:"type"`
 	ID         string          `json:"id"`
 	Store      string          `json:"store"`
 	Expiration time.Time       `json:"expiration"`
@@ -70,19 +72,19 @@ type Resource struct {
 // AddResource stores a resource state for the given provider. The provider
 // will be added to state if it does not already exist. Any existing resources
 // with the same ID will be marked as deposed.
-func (s *State) AddResource(t ProviderType, resource *Resource) {
+func (s *State) AddResource(resource *Resource) {
 	var state *providerState
 	for _, provider := range s.Providers {
-		if provider.Type == t {
+		if provider.Type == resource.Type.Provider() {
 			state = provider
 		}
 	}
 	if state == nil {
-		state = &providerState{Type: t}
+		state = &providerState{Type: resource.Type.Provider()}
 		s.Providers = append(s.Providers, state)
 	}
 	for i, res := range state.Resources {
-		if res.Store == resource.Store && res.ID == resource.ID {
+		if res.Type == resource.Type && res.Store == resource.Store && res.ID == resource.ID {
 			state.Resources[i].Deposed = true
 		}
 	}
@@ -91,14 +93,14 @@ func (s *State) AddResource(t ProviderType, resource *Resource) {
 
 // GetResourcesByID returns all resources with the given ID from state, and also
 // marks the resources as being in use.
-func (s *State) GetResourcesByID(t ProviderType, id, store string) []*Resource {
-	p, ok := s.getProviderState(t)
+func (s *State) GetResourcesByID(t CredentialType, id, store string) []*Resource {
+	p, ok := s.getProviderState(t.Provider())
 	if !ok {
 		return nil
 	}
 	var resources []*Resource
 	for _, r := range p.Resources {
-		if r.Store == store && r.ID == id {
+		if r.Type == t && r.Store == store && r.ID == id {
 			resources, r.InUse = append(resources, r), true
 		}
 	}
@@ -106,13 +108,13 @@ func (s *State) GetResourcesByID(t ProviderType, id, store string) []*Resource {
 }
 
 // RemoveResource from the state.
-func (s *State) RemoveResource(t ProviderType, resource *Resource) {
-	state, ok := s.getProviderState(t)
+func (s *State) RemoveResource(resource *Resource) {
+	state, ok := s.getProviderState(resource.Type.Provider())
 	if !ok {
 		return
 	}
 	for i, res := range state.Resources {
-		if res.Store == resource.Store && res.ID == resource.ID {
+		if res.Type == resource.Type && res.Store == resource.Store && res.ID == resource.ID {
 			state.Resources = append(state.Resources[:i], state.Resources[i+1:]...)
 			break
 		}

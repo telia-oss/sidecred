@@ -49,6 +49,7 @@ requests:
 				"team-name.fake-credential": "fake-value",
 			},
 			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: testTime,
@@ -73,12 +74,14 @@ requests:
     name: fake.state.id
 			`),
 			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: testTime,
 			}},
 			expectedSecrets: map[string]string{},
 			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: testTime,
@@ -103,11 +106,13 @@ requests:
     name: fake.state.id
 			`),
 			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: time.Now().Add(3 * time.Minute),
 			}},
 			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: testTime,
@@ -133,11 +138,13 @@ requests:
     name: fake.state.id
 			`),
 			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: time.Now(),
 			}},
 			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         testStateID,
 				Store:      "inprocess",
 				Expiration: testTime,
@@ -157,6 +164,7 @@ stores:
 - type: inprocess
 			`),
 			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
 				ID:         "other.state.id",
 				Store:      "inprocess",
 				Expiration: testTime,
@@ -221,12 +229,14 @@ requests:
 			`),
 			expectedResources: []*sidecred.Resource{
 				{
+					Type:       sidecred.Randomized,
 					ID:         testStateID,
 					Store:      "one",
 					Expiration: testTime,
 					InUse:      true,
 				},
 				{
+					Type:       sidecred.Randomized,
 					ID:         testStateID,
 					Store:      "two",
 					Expiration: testTime,
@@ -246,7 +256,7 @@ requests:
 				logger   = zaptest.NewLogger(t)
 			)
 			for _, r := range tc.resources {
-				state.AddResource(provider.Type(), r)
+				state.AddResource(r)
 			}
 
 			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
@@ -298,14 +308,17 @@ stores:
 			`),
 			resources: []*sidecred.Resource{
 				{
+					Type:       sidecred.Randomized,
 					ID:         "r1",
 					Expiration: time.Now(),
 				},
 				{
+					Type:       sidecred.Randomized,
 					ID:         "r2",
 					Expiration: time.Now(),
 				},
 				{
+					Type:       sidecred.Randomized,
 					ID:         "r3",
 					Expiration: time.Now(),
 				},
@@ -341,7 +354,7 @@ stores:
 			)
 
 			for _, r := range tc.resources {
-				state.AddResource(provider.Type(), r)
+				state.AddResource(r)
 			}
 
 			for _, s := range tc.secrets {
