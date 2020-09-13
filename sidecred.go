@@ -243,7 +243,7 @@ RequestLoop:
 			}
 			log.Info("processing request", zap.String("name", r.Name))
 
-			for _, resource := range state.GetResourcesByID(p.Type(), r.Name) {
+			for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.alias()) {
 				if r.hasValidCredentials(resource, s.rotationWindow) {
 					log.Info("found existing credentials", zap.String("name", r.Name))
 					continue CredentialLoop
@@ -259,7 +259,7 @@ RequestLoop:
 				log.Error("no credentials returned by provider")
 				continue CredentialLoop
 			}
-			state.AddResource(p.Type(), newResource(r, creds[0].Expiration, metadata))
+			state.AddResource(newResource(r, storeConfig.alias(), creds[0].Expiration, metadata))
 			log.Info("created new credentials", zap.Int("count", len(creds)))
 
 			for _, c := range creds {
@@ -296,7 +296,7 @@ RequestLoop:
 			if err := provider.Destroy(resource); err != nil {
 				log.Error("destroy resource", zap.Error(err))
 			}
-			state.RemoveResource(provider.Type(), resource)
+			state.RemoveResource(resource)
 		}
 	}
 
