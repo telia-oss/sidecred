@@ -15,9 +15,8 @@ import (
 )
 
 var (
-	testCredentialType = sidecred.Randomized
-	testStateID        = "fake.state.id"
-	testTime           = time.Now().Add(1 * time.Hour)
+	testStateID = "fake.state.id"
+	testTime    = time.Now().Add(1 * time.Hour)
 )
 
 func TestProcess(t *testing.T) {
@@ -51,6 +50,7 @@ requests:
 			},
 			expectedResources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: testTime,
 				InUse:      true,
 			}},
@@ -74,11 +74,13 @@ requests:
 			`),
 			resources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: testTime,
 			}},
 			expectedSecrets: map[string]string{},
 			expectedResources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: testTime,
 				InUse:      true,
 			}},
@@ -102,10 +104,12 @@ requests:
 			`),
 			resources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: time.Now().Add(3 * time.Minute),
 			}},
 			expectedResources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: testTime,
 				InUse:      true,
 			}},
@@ -130,10 +134,12 @@ requests:
 			`),
 			resources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: time.Now(),
 			}},
 			expectedResources: []*sidecred.Resource{{
 				ID:         testStateID,
+				Store:      "inprocess",
 				Expiration: testTime,
 				InUse:      true,
 			}},
@@ -152,6 +158,7 @@ stores:
 			`),
 			resources: []*sidecred.Resource{{
 				ID:         "other.state.id",
+				Store:      "inprocess",
 				Expiration: testTime,
 			}},
 			expectedResources:    []*sidecred.Resource{},
@@ -215,11 +222,13 @@ requests:
 			expectedResources: []*sidecred.Resource{
 				{
 					ID:         testStateID,
+					Store:      "one",
 					Expiration: testTime,
 					InUse:      true,
 				},
 				{
 					ID:         testStateID,
+					Store:      "two",
 					Expiration: testTime,
 					InUse:      true,
 				},

@@ -43,9 +43,10 @@ func (s *State) getProviderState(t ProviderType) (*providerState, bool) {
 }
 
 // newResource returns a new sidecred.Resource.
-func newResource(request *CredentialRequest, expiration time.Time, metadata *Metadata) *Resource {
+func newResource(request *CredentialRequest, store string, expiration time.Time, metadata *Metadata) *Resource {
 	return &Resource{
 		ID:         request.Name,
+		Store:      store,
 		Config:     request.Config,
 		Expiration: expiration,
 		Deposed:    false,
@@ -58,6 +59,7 @@ func newResource(request *CredentialRequest, expiration time.Time, metadata *Met
 // part of creating the requested credentials.
 type Resource struct {
 	ID         string          `json:"id"`
+	Store      string          `json:"store"`
 	Expiration time.Time       `json:"expiration"`
 	Deposed    bool            `json:"deposed"`
 	Config     json.RawMessage `json:"config,omitempty"`
@@ -80,7 +82,7 @@ func (s *State) AddResource(t ProviderType, resource *Resource) {
 		s.Providers = append(s.Providers, state)
 	}
 	for i, res := range state.Resources {
-		if res.ID == resource.ID {
+		if res.Store == resource.Store && res.ID == resource.ID {
 			state.Resources[i].Deposed = true
 		}
 	}
@@ -89,14 +91,14 @@ func (s *State) AddResource(t ProviderType, resource *Resource) {
 
 // GetResourcesByID returns all resources with the given ID from state, and also
 // marks the resources as being in use.
-func (s *State) GetResourcesByID(t ProviderType, id string) []*Resource {
+func (s *State) GetResourcesByID(t ProviderType, id, store string) []*Resource {
 	p, ok := s.getProviderState(t)
 	if !ok {
 		return nil
 	}
 	var resources []*Resource
 	for _, r := range p.Resources {
-		if r.ID == id {
+		if r.Store == store && r.ID == id {
 			resources, r.InUse = append(resources, r), true
 		}
 	}
@@ -110,7 +112,7 @@ func (s *State) RemoveResource(t ProviderType, resource *Resource) {
 		return
 	}
 	for i, res := range state.Resources {
-		if res.ID == resource.ID {
+		if res.Store == resource.Store && res.ID == resource.ID {
 			state.Resources = append(state.Resources[:i], state.Resources[i+1:]...)
 			break
 		}
