@@ -189,6 +189,43 @@ requests:
 			expectedSecrets:   map[string]string{},
 			expectedResources: []*sidecred.Resource{},
 		},
+		{
+			description: "allows different stores to have overlapping credential names",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: team-name
+
+stores:
+- name: one
+  type: inprocess
+- name: two
+  type: inprocess
+
+requests:
+- store: one
+  creds:
+  - type: random
+    name: fake.state.id
+- store: two
+  creds:
+  - type: random
+    name: fake.state.id
+			`),
+			expectedResources: []*sidecred.Resource{
+				{
+					ID:         testStateID,
+					Expiration: testTime,
+					InUse:      true,
+				},
+				{
+					ID:         testStateID,
+					Expiration: testTime,
+					InUse:      true,
+				},
+			},
+			expectedCreateCalls: 2,
+		},
 	}
 
 	for _, tc := range tests {
