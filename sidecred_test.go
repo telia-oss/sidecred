@@ -342,7 +342,7 @@ requests:
 			}
 
 			for k, v := range tc.expectedSecrets {
-				value, found, err := store.Read(k, sidecred.NoConfig)
+				value, found, err := store.Read(k, []byte("{}"))
 				assert.NoError(t, err)
 				assert.True(t, found, "secret exists")
 				assert.Equal(t, v, value)

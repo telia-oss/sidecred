@@ -7,9 +7,6 @@ import (
 	"reflect"
 )
 
-// NoConfig represents an empty JSON Configuration (used for testing).
-var NoConfig = []byte("{}")
-
 // Config represents the user-defined configuration that should be passed to the sidecred.Sidecred.Process method.
 type Config struct {
 	Version   int              `json:"version"`
