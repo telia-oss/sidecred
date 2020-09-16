@@ -1,4 +1,4 @@
-// Package random implements a sidecred.Provider for random strings, and can be used for tests.
+// Package random implements a sidecred.Provider for random strings.
 package random
 
 import (
@@ -8,9 +8,17 @@ import (
 	"github.com/telia-oss/sidecred"
 )
 
-// RequestConfig ...
+// RequestConfig is the configuration format for random credential requests.
+//
+// Example request:
+//
+//   - type: random
+//     name: example-random-credential
+//     config:
+//       length: 10
+//
 type RequestConfig struct {
-	Length int `json:"length"`
+	Length int `json:"length"` // Length of the random string.
 }
 
 // New returns a new sidecred.Provider for random strings.
