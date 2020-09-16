@@ -1,3 +1,4 @@
+// Package sidecred implements the business logic for https://github.com/telia-oss/sidecred.
 package sidecred
 
 import (
