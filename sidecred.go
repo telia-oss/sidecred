@@ -17,9 +17,8 @@ type CredentialRequest struct {
 	// Type identifies the type of credential (and provider) for a request.
 	Type CredentialType `json:"type"`
 
-	// Name is an indentifier that can be used for naming resources and
-	// credentials created by a sidecred.Provider. The exact usage for
-	// name is up to the individual provider.
+	// Name is an indentifier that can be used for naming resources and credentials created by a
+	// sidecred.Provider. The exact usage for name is up to the individual provider.
 	Name string `json:"name"`
 
 	// Rotation is an override for the default rotation window
@@ -28,8 +27,8 @@ type CredentialRequest struct {
 	// for possibly longer running authentications or processes.
 	RotationWindow *Duration `json:"rotation_window"`
 
-	// Config holds the specific configuration for the requested credential
-	// type, and must be deserialized by the provider when Create is called.
+	// Config holds the specific configuration for the requested credential type, and must be
+	// deserialized by the provider when Create is called.
 	Config json.RawMessage `json:"config"`
 }
 
@@ -41,8 +40,8 @@ func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
 	return nil
 }
 
-// hasValidCredentials returns true if there are already valid credentials
-// for the request. This is determined by the last resource state.
+// hasValidCredentials returns true if there are already valid credentials for the request. This is
+// determined by the last resource state.
 func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
 
 	if resource.Deposed {
@@ -134,20 +133,17 @@ type Provider interface {
 	// Type returns the provider type.
 	Type() ProviderType
 
-	// Create the requested credentials. Any sidecred.Resource
-	// returned will be stored in state and used to determine
-	// when credentials need to be rotated.
+	// Create the requested credentials. The Metadata is stored in state and passed to the provider
+	// when deleting credentials.
 	Create(request *CredentialRequest) ([]*Credential, *Metadata, error)
 
-	// Destroy the specified resource. This is scheduled if
-	// a resource in the state has expired. For providers that
-	// are not stateful this should be a no-op.
+	// Destroy the specified resource. This is scheduled if a resource in the state has expired.
+	// (This is a no-op if the provider is not stateful)
 	Destroy(resource *Resource) error
 }
 
-// Metadata allows providers to pass additional information to be
-// stored in the sidecred.ResourceState after successfully creating
-// credentials.
+// Metadata allows providers to pass additional information to be stored in the sidecred.ResourceState
+// after successfully creating credentials.
 type Metadata map[string]string
 
 // Credential is a key/value pair returned by a sidecred.Provider.
@@ -187,8 +183,8 @@ type SecretStore interface {
 	// Read the specified secret by reference.
 	Read(path string, config json.RawMessage) (string, bool, error)
 
-	// Delete the specified secret. Should not return an error
-	// if the secret does not exist or has already been deleted.
+	// Delete the specified secret. Should not return an error if the secret does not exist or has
+	// already been deleted.
 	Delete(path string, config json.RawMessage) error
 }
 
@@ -316,8 +312,8 @@ RequestLoop:
 	}
 
 	for _, ps := range state.Providers {
-		// Reverse loop to handle index changes due to deleting items in the
-		// underlying array: https://stackoverflow.com/a/29006008
+		// Reverse loop to handle index changes due to deleting items in the underlying array.
+		// (source: https://stackoverflow.com/a/29006008)
 		for i := len(ps.Resources) - 1; i >= 0; i-- {
 			resource := ps.Resources[i]
 			if resource.InUse && !resource.Deposed {

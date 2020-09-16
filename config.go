@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-// Config represents the user-defined configuration that should be passed to the sidecred.Sidecred.Process method.
+// Config represents the user-defined configuration that should be passed to sidecred.Process.
 type Config struct {
 	Version   int              `json:"version"`
 	Namespace string           `json:"namespace"`
@@ -97,16 +97,15 @@ func (c *RequestConfig) CredentialRequests() (requests []*CredentialRequest) {
 	return requests
 }
 
-// CredentialRequestConfig extends sidecred.CredentialRequest by allowing it to be defined in two ways:
-// 1. As a regular CredentialRequest.
-// 2. As a list of requests that share a CredentialType (nested credential requests should omit "type"):
+// CredentialRequestConfig extends sidecred.CredentialRequest by allowing users to optionally define
+// credential requests in a list that shares a CredentialType (nested requests should omit "type"):
 //
 //  - type: aws:sts
 //    list:
-// 	    - name: credential1
-//        config ...
-// 	    - name: credential2
-//        config ...
+//    - name: credential1
+//      config ...
+//    - name: credential2
+//      config ...
 //
 type CredentialRequestConfig struct {
 	*CredentialRequest `json:",inline"`
@@ -145,8 +144,8 @@ func (c *CredentialRequestConfig) flatten() []*CredentialRequest {
 	return c.List
 }
 
-// UnmarshalConfig is a convenience method for performing a strict unmarshalling of a JSON config into a provided
-// structure. If config is empty, no operation is performed by this function.
+// UnmarshalConfig is a convenience method for performing a strict unmarshalling of a JSON config
+// into a provided structure. If config is empty, no operation is performed by this function.
 func UnmarshalConfig(config json.RawMessage, target interface{}) error {
 	if len(config) == 0 {
 		return nil
@@ -156,10 +155,9 @@ func UnmarshalConfig(config json.RawMessage, target interface{}) error {
 	return d.Decode(target)
 }
 
-// isEqualConfig is a convenience function for unmarshalling the JSON config
-// from the request and resource structures, and performing a logical deep
-// equality check instead of a byte equality check. This avoids errors due to
-// structural (but non-logical) changes due to (de)serialization.
+// isEqualConfig is a convenience function for unmarshalling the JSON config from the request and
+// resource structures, and performing a logical deep equality check instead of a byte equality
+// check. This avoids errors due to structural (but non-logical) changes due to (de)serialization.
 func isEqualConfig(b1, b2 []byte) bool {
 	var o1 interface{}
 	var o2 interface{}

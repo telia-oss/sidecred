@@ -20,9 +20,9 @@ func NewState() *State {
 	return &State{}
 }
 
-// State is responsible for keeping track of when credentials need to be
-// rotated because they are expired, the configuration has changed, or
-// they have been deposed and need to clean up resources and secrets.
+// State is responsible for keeping track of when credentials need to be rotated because they are
+// expired, the configuration has changed, or they have been deposed and need to clean up resources
+// and secrets.
 type State struct {
 	Providers []*providerState `json:"providers,omitempty"`
 	Stores    []*storeState    `json:"stores,omitempty"`
@@ -56,8 +56,7 @@ func newResource(request *CredentialRequest, store string, expiration time.Time,
 	}
 }
 
-// Resource represents a resource provisioned by a sidecred.Provider as
-// part of creating the requested credentials.
+// Resource represents a resource provisioned by a sidecred.Provider as part of creating the requested credentials.
 type Resource struct {
 	Type       CredentialType  `json:"type"`
 	ID         string          `json:"id"`
@@ -69,9 +68,8 @@ type Resource struct {
 	InUse      bool            `json:"-"`
 }
 
-// AddResource stores a resource state for the given provider. The provider
-// will be added to state if it does not already exist. Any existing resources
-// with the same ID will be marked as deposed.
+// AddResource stores a resource state for the given provider. The provider is added to state if it
+// does not already exist. Any existing resources with the same ID is marked as deposed.
 func (s *State) AddResource(resource *Resource) {
 	var state *providerState
 	for _, provider := range s.Providers {
@@ -91,8 +89,8 @@ func (s *State) AddResource(resource *Resource) {
 	state.Resources = append(state.Resources, resource)
 }
 
-// GetResourcesByID returns all resources with the given ID from state, and also
-// marks the resources as being in use.
+// GetResourcesByID returns all resources with the given ID from state, and also marks the resources
+// as being in use.
 func (s *State) GetResourcesByID(t CredentialType, id, store string) []*Resource {
 	p, ok := s.getProviderState(t.Provider())
 	if !ok {
@@ -147,9 +145,8 @@ func (s *State) getSecretStoreState(c *StoreConfig) (*storeState, bool) {
 	return nil, false
 }
 
-// AddSecret adds state for the specified sidecred.SecretStore alias. The
-// store will be added to state if it does not already exist, and any
-// existing state for the same secret path will be overwritten.
+// AddSecret adds state for the specified sidecred.SecretStore alias. The store is added to state if
+// it does not already exist, and any existing state for the same secret path is overwritten.
 func (s *State) AddSecret(c *StoreConfig, secret *Secret) {
 	state, ok := s.getSecretStoreState(c)
 	if !ok {
@@ -165,8 +162,7 @@ func (s *State) AddSecret(c *StoreConfig, secret *Secret) {
 	state.Secrets = append(state.Secrets, secret)
 }
 
-// ListOrphanedSecrets lists all secrets tied to missing resource
-// IDs that should be considered orhpaned.
+// ListOrphanedSecrets lists all secrets tied to missing resource IDs that should be considered orhpaned.
 func (s *State) ListOrphanedSecrets(c *StoreConfig) []*Secret {
 	validResourceIDs := make(map[string]struct{})
 	for _, p := range s.Providers {
