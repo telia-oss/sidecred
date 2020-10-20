@@ -45,6 +45,7 @@ func New(app App, options ...option) sidecred.Provider {
 			return githubapp.NewInstallationClient(token).V3.Repositories
 		},
 		defaultTokenPermissions: &githubapp.Permissions{
+			Metadata:     github.String("read"),
 			Contents:     github.String("read"),
 			PullRequests: github.String("write"),
 			Statuses:     github.String("write"),
