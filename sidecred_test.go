@@ -122,6 +122,72 @@ requests:
 			expectedDestroyCalls: 1,
 		},
 		{
+			description: "replaces expired resources (within the override rotation window)",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: team-name
+
+stores:
+- type: inprocess
+
+requests:
+- store: inprocess
+  creds:
+  - type: random
+    rotation_window: 1800 # 30 minutes
+    name: fake.state.id
+			`),
+			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: time.Now().Add(29 * time.Minute),
+			}},
+			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: testTime,
+				InUse:      true,
+			}},
+			expectedCreateCalls:  1,
+			expectedDestroyCalls: 1,
+		},
+		{
+			description: "does not replace resources (outside the rotation window)",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: team-name
+
+stores:
+- type: inprocess
+
+requests:
+- store: inprocess
+  creds:
+  - type: random
+    rotation_window: 240 # 4 minutes
+    name: fake.state.id
+			`),
+			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: testTime.Add(-55 * time.Minute),
+			}},
+			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: testTime.Add(-55 * time.Minute),
+				InUse:      true,
+			}},
+			expectedCreateCalls:  0,
+			expectedDestroyCalls: 0,
+		},
+		{
 			description: "destroys deposed resources",
 			config: strings.TrimSpace(`
 ---

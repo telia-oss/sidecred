@@ -20,6 +20,12 @@ type CredentialRequest struct {
 	// name is up to the individual provider.
 	Name string `json:"name"`
 
+	// Rotation is an override for the default rotation window
+	// measured in seconds.
+	// This will aid in cases where we want to be more granular
+	// for possibly longer running authentications or processes.
+	RotationWindow int `json:"rotation_window"`
+
 	// Config holds the specific configuration for the requested credential
 	// type, and must be deserialized by the provider when Create is called.
 	Config json.RawMessage `json:"config"`
@@ -36,6 +42,7 @@ func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
 // hasValidCredentials returns true if there are already valid credentials
 // for the request. This is determined by the last resource state.
 func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
+
 	if resource.Deposed {
 		return false
 	}
@@ -45,9 +52,16 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 	if !isEqualConfig(r.Config, resource.Config) {
 		return false
 	}
-	if resource.Expiration.Add(-rotationWindow).Before(time.Now()) {
+
+	rotation := rotationWindow
+	if r.RotationWindow != 0 {
+		rotation = time.Duration(r.RotationWindow) * time.Second
+	}
+
+	if resource.Expiration.Add(-rotation).Before(time.Now()) {
 		return false
 	}
+
 	return true
 }
 
