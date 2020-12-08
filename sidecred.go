@@ -26,7 +26,7 @@ type CredentialRequest struct {
 	// for possibly longer running authentications or processes.
 	//
 	// Needs to be a int because JSON unmarshalling does not support Duration
-	Rotation int `json:"rotation"`
+	RotationWindow int `json:"rotation_window"`
 
 	// Config holds the specific configuration for the requested credential
 	// type, and must be deserialized by the provider when Create is called.
@@ -44,7 +44,7 @@ func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
 // hasValidCredentials returns true if there are already valid credentials
 // for the request. This is determined by the last resource state.
 func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
-	now := time.Now()
+
 	if resource.Deposed {
 		return false
 	}
@@ -56,11 +56,11 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 	}
 
 	rotation := rotationWindow
-	if r.Rotation != 0 {
-		rotation = time.Duration(r.Rotation) * time.Second
+	if r.RotationWindow != 0 {
+		rotation = time.Duration(r.RotationWindow) * time.Second
 	}
 
-	if resource.Expiration.Add(-rotation).Before(now) {
+	if resource.Expiration.Add(-rotation).Before(time.Now()) {
 		return false
 	}
 

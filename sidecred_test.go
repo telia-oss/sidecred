@@ -155,7 +155,7 @@ requests:
 			expectedDestroyCalls: 1,
 		},
 		{
-			description: "does not replace resources (within the override rotation window)",
+			description: "does not replace resources (outside the rotation window)",
 			config: strings.TrimSpace(`
 ---
 version: 1
