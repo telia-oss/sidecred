@@ -55,13 +55,15 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 		return false
 	}
 
-	if resource.Expiration.Add(time.Duration(-r.Rotation) * time.Minute).Before(now) {
+	rotation := rotationWindow
+	if r.Rotation != 0 {
+		rotation = time.Duration(r.Rotation) * time.Minute
+	}
+
+	if resource.Expiration.Add(-rotation).Before(now) {
 		return false
 	}
 
-	if resource.Expiration.Add(-rotationWindow).Before(now) {
-		return false
-	}
 	return true
 }
 
