@@ -135,7 +135,7 @@ requests:
 - store: inprocess
   creds:
   - type: random
-    rotation: 30
+    rotation: 1800 # 30 minutes
     name: fake.state.id
 			`),
 			resources: []*sidecred.Resource{{
@@ -168,7 +168,7 @@ requests:
 - store: inprocess
   creds:
   - type: random
-    rotation: 4
+    rotation: 240 # 4 minutes
     name: fake.state.id
 			`),
 			resources: []*sidecred.Resource{{

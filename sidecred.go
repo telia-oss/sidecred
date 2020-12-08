@@ -21,7 +21,7 @@ type CredentialRequest struct {
 	Name string `json:"name"`
 
 	// Rotation is an override for the default rotation window
-	// measured in minutes.
+	// measured in seconds.
 	// This will aid in cases where we want to be more granular
 	// for possibly longer running authentications or processes.
 	//
@@ -57,7 +57,7 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 
 	rotation := rotationWindow
 	if r.Rotation != 0 {
-		rotation = time.Duration(r.Rotation) * time.Minute
+		rotation = time.Duration(r.Rotation) * time.Second
 	}
 
 	if resource.Expiration.Add(-rotation).Before(now) {
