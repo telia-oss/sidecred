@@ -24,8 +24,6 @@ type CredentialRequest struct {
 	// measured in seconds.
 	// This will aid in cases where we want to be more granular
 	// for possibly longer running authentications or processes.
-	//
-	// Needs to be a int because JSON unmarshalling does not support Duration
 	RotationWindow int `json:"rotation_window"`
 
 	// Config holds the specific configuration for the requested credential
