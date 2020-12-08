@@ -122,6 +122,39 @@ requests:
 			expectedDestroyCalls: 1,
 		},
 		{
+			description: "replaces expired resources (within the override rotation window)",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: team-name
+
+stores:
+- type: inprocess
+
+requests:
+- store: inprocess
+  creds:
+  - type: random
+    rotation: 15
+    name: fake.state.id
+			`),
+			resources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: time.Now().Add(11 * time.Minute),
+			}},
+			expectedResources: []*sidecred.Resource{{
+				Type:       sidecred.Randomized,
+				ID:         testStateID,
+				Store:      "inprocess",
+				Expiration: testTime,
+				InUse:      true,
+			}},
+			expectedCreateCalls:  1,
+			expectedDestroyCalls: 1,
+		},
+		{
 			description: "destroys deposed resources",
 			config: strings.TrimSpace(`
 ---
