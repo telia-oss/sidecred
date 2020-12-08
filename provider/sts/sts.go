@@ -12,9 +12,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-// RequestConfig ...
+// RequestConfig is the configuration format for sts credential requests.
+//
+// Example request:
+//
+//   - type: aws:sts
+//     name: example-sts-credential
+//     config:
+//       role_arn: arn:aws:iam::role/role-name
+//       duration: 900
+//
 type RequestConfig struct {
-	RoleARN  string             `json:"role_arn"`
+	// RoleARN to use for generating the temporary STS credentials.
+	RoleARN string `json:"role_arn"`
+
+	// Duration in seconds for the STS credentials. The minimum value is 15 minutes.
 	Duration *sidecred.Duration `json:"duration"`
 }
 
