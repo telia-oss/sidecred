@@ -7,25 +7,25 @@ stores:
   - type: ssm
 
 requests:
-  - store: ssm 
+  - store: ssm
     creds:
-    - type: aws:sts
-      name: open-source-dev-read-only
-      config:
-        role_arn: arn:aws:iam::role/role-name
-        duration: 900
-    - type: github:access-token
-      name: itsdalmo-access-token
-      config:
-        owner: itsdalmo
-        repositories:
-          - dotfiles
-        permissions:
-          contents: read
-    - type: github:deploy-key
-      name: dotfiles-deploy-key
-      config:
-        title: sidecred-test
-        owner: itsdalmo
-        repository: dotfiles
-        read_only: true
+      - type: aws:sts
+        name: open-source-dev-read-only
+        config:
+          role_arn: arn:aws:iam::role/role-name
+          duration: 15m
+      - type: github:access-token
+        name: itsdalmo-access-token
+        config:
+          owner: itsdalmo
+          repositories:
+            - dotfiles
+          permissions:
+            contents: read
+      - type: github:deploy-key
+        name: dotfiles-deploy-key
+        config:
+          title: sidecred-test
+          owner: itsdalmo
+          repository: dotfiles
+          read_only: true

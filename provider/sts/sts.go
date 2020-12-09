@@ -14,8 +14,8 @@ import (
 
 // RequestConfig ...
 type RequestConfig struct {
-	RoleARN  string `json:"role_arn"`
-	Duration int64  `json:"duration"`
+	RoleARN  string             `json:"role_arn"`
+	Duration *sidecred.Duration `json:"duration"`
 }
 
 // NewClient returns a new client for STSAPI.
@@ -70,8 +70,8 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 		return nil, nil, err
 	}
 	duration := int64(p.sessionDuration.Seconds())
-	if c.Duration != 0 {
-		duration = c.Duration
+	if c.Duration != nil {
+		duration = int64(c.Duration.Seconds())
 	}
 	input := &sts.AssumeRoleInput{
 		RoleSessionName: aws.String(request.Name),

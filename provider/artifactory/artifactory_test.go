@@ -49,7 +49,7 @@ func TestArtifactoryProvider(t *testing.T) {
 			request: &sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
-				Config: []byte(`{"user": "some-user", "group": "some-artifactory-group", "duration": 60}`),
+				Config: []byte(`{"user": "some-user", "group": "some-artifactory-group", "duration": "60s"}`),
 			},
 		},
 	}

@@ -49,7 +49,7 @@ requests:
         name: open-source-dev-read-only
         config:
           role_arn: arn:aws:iam::role/role-name
-          duration: 900
+          duration: 15m
   - store: secretsmanager
     creds:
       - type: github:access-token

@@ -61,7 +61,7 @@ type RequestConfig struct {
 	Group string `json:"group"`
 
 	// Request-specific override for credential duration.
-	Duration int `json:"duration"`
+	Duration *sidecred.Duration `json:"duration"`
 }
 
 // NewClient returns a new client for ArtifactoryAPI.
@@ -123,8 +123,8 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 		return nil, nil, err
 	}
 	duration := int(p.sessionDuration.Seconds())
-	if c.Duration != 0 {
-		duration = c.Duration
+	if c.Duration != nil {
+		duration = int(c.Duration.Seconds())
 	}
 
 	params := services.CreateTokenParams{

@@ -3,6 +3,7 @@ package sidecred
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -24,7 +25,7 @@ type CredentialRequest struct {
 	// measured in seconds.
 	// This will aid in cases where we want to be more granular
 	// for possibly longer running authentications or processes.
-	RotationWindow int `json:"rotation_window"`
+	RotationWindow *Duration `json:"rotation_window"`
 
 	// Config holds the specific configuration for the requested credential
 	// type, and must be deserialized by the provider when Create is called.
@@ -54,8 +55,8 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 	}
 
 	rotation := rotationWindow
-	if r.RotationWindow != 0 {
-		rotation = time.Duration(r.RotationWindow) * time.Second
+	if r.RotationWindow != nil {
+		rotation = r.RotationWindow.Duration
 	}
 
 	if resource.Expiration.Add(-rotation).Before(time.Now()) {
@@ -63,6 +64,30 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 	}
 
 	return true
+}
+
+// Duration implements JSON (un)marshal for time.Duration.
+type Duration struct {
+	time.Duration
+}
+
+// MarshalJSON implements json.Marshaler.
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	s, err := strconv.Unquote(string(data))
+	if err != nil {
+		return err
+	}
+	v, err := time.ParseDuration(s)
+	if err != nil {
+		return fmt.Errorf("parse duration: %s", err)
+	}
+	d.Duration = v
+	return nil
 }
 
 // CredentialType ...
