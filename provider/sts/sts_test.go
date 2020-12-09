@@ -59,7 +59,7 @@ func TestSTSProvider(t *testing.T) {
 			request: &sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,
 				Name:   "request-name",
-				Config: []byte(`{"role_arn": "request-role-arn", "duration":60}`),
+				Config: []byte(`{"role_arn": "request-role-arn", "duration":"60s"}`),
 			},
 		},
 	}

@@ -36,7 +36,7 @@ requests:
       name: open-source-dev-read-only
       config:
         role_arn: arn:aws:iam::role/role-name
-        duration: 900
+        duration: 15m
             `),
 			expected:                "",
 			expectedRequestCount:    1,
@@ -60,7 +60,7 @@ requests:
       - name: open-source-dev-read-only
         config:
           role_arn: arn:aws:iam::role/role-name
-          duration: 900
+          duration: 15m
             `),
 			expected:                "",
 			expectedRequestCount:    1,
@@ -86,7 +86,7 @@ requests:
       - name: open-source-dev-read-only
         config:
           role_arn: arn:aws:iam::role/role-name
-          duration: 900
+          duration: 15m
             `),
 			expected:                "",
 			expectedRequestCount:    1,
@@ -110,7 +110,7 @@ requests:
       name: open-source-dev-read-only
       config:
         role_arn: arn:aws:iam::role/role-name
-        duration: 900
+        duration: 15m
     - type: aws:sts
       name: open-source-dev-read-only
             `),
