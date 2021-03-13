@@ -1,8 +1,10 @@
 package sidecred
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -10,6 +12,20 @@ import (
 
 	"go.uber.org/zap"
 )
+
+// Config represents the user-defined configuration that should be passed to the sidecred.Sidecred.Process method.
+type Config interface {
+	Namespace() string
+	Stores() []*StoreConfig
+	Requests() []*Request
+	Validate() error
+}
+
+// Request ...
+type Request struct {
+	Store       string
+	Credentials []*CredentialRequest
+}
 
 // CredentialRequest is the root datastructure used to request credentials in Sidecred.
 type CredentialRequest struct {
@@ -43,7 +59,6 @@ func (r *CredentialRequest) UnmarshalConfig(target interface{}) error {
 // hasValidCredentials returns true if there are already valid credentials
 // for the request. This is determined by the last resource state.
 func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWindow time.Duration) bool {
-
 	if resource.Deposed {
 		return false
 	}
@@ -53,17 +68,51 @@ func (r *CredentialRequest) hasValidCredentials(resource *Resource, rotationWind
 	if !isEqualConfig(r.Config, resource.Config) {
 		return false
 	}
-
 	rotation := rotationWindow
 	if r.RotationWindow != nil {
 		rotation = r.RotationWindow.Duration
 	}
-
 	if resource.Expiration.Add(-rotation).Before(time.Now()) {
 		return false
 	}
-
 	return true
+}
+
+// UnmarshalConfig is a convenience method for performing a strict unmarshalling of a JSON config into a provided
+// structure. If config is empty, no operation is performed by this function.
+func UnmarshalConfig(config json.RawMessage, target interface{}) error {
+	if len(config) == 0 {
+		return nil
+	}
+	d := json.NewDecoder(bytes.NewReader(config))
+	d.DisallowUnknownFields()
+	return d.Decode(target)
+}
+
+// isEqualConfig is a convenience function for unmarshalling the JSON config
+// from the request and resource structures, and performing a logical deep
+// equality check instead of a byte equality check. This avoids errors due to
+// structural (but non-logical) changes due to (de)serialization.
+func isEqualConfig(b1, b2 []byte) bool {
+	var o1 interface{}
+	var o2 interface{}
+
+	// Allow the configurations to both be empty
+	if len(b1) == 0 && len(b2) == 0 {
+		return true
+	}
+
+	err := json.Unmarshal(b1, &o1)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(b2, &o2)
+	if err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(o1, o2)
 }
 
 // Duration implements JSON (un)marshal for time.Duration.
@@ -175,6 +224,21 @@ const (
 // StoreType ...
 type StoreType string
 
+// StoreConfig is used to define the secret stores in the configuration for Sidecred.
+type StoreConfig struct {
+	Type   StoreType       `json:"type"`
+	Name   string          `json:"name"`
+	Config json.RawMessage `json:"config,omitempty"`
+}
+
+// Alias returns a name that can be used to identify configured store. defaults to the StoreType.
+func (c *StoreConfig) Alias() string {
+	if c.Name != "" {
+		return c.Name
+	}
+	return string(c.Type)
+}
+
 // SecretStore is implemented by store backends for secrets.
 type SecretStore interface {
 	// Type returns the store type.
@@ -239,22 +303,22 @@ type Sidecred struct {
 }
 
 // Process a single sidecred.Request.
-func (s *Sidecred) Process(config *Config, state *State) error {
-	log := s.logger.With(zap.String("namespace", config.Namespace))
-	log.Info("starting sidecred", zap.Int("requests", len(config.Requests)))
+func (s *Sidecred) Process(config Config, state *State) error {
+	log := s.logger.With(zap.String("namespace", config.Namespace()))
+	log.Info("starting sidecred", zap.Int("requests", len(config.Requests())))
 
 	if err := config.Validate(); err != nil {
 		return fmt.Errorf("invalid config: %s", err)
 	}
 
 RequestLoop:
-	for _, request := range config.Requests {
+	for _, request := range config.Requests() {
 		var (
 			store       SecretStore
 			storeConfig *StoreConfig
 		)
-		for _, sc := range config.Stores {
-			if sc.alias() == request.Store {
+		for _, sc := range config.Stores() {
+			if sc.Alias() == request.Store {
 				storeConfig = sc
 			}
 		}
@@ -269,7 +333,7 @@ RequestLoop:
 		}
 
 	CredentialLoop:
-		for _, r := range request.CredentialRequests() {
+		for _, r := range request.Credentials {
 			log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
 			if r.Name == "" {
 				log.Warn("missing name in request")
@@ -282,7 +346,7 @@ RequestLoop:
 			}
 			log.Info("processing request", zap.String("name", r.Name))
 
-			for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.alias()) {
+			for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
 				if r.hasValidCredentials(resource, s.rotationWindow) {
 					log.Info("found existing credentials", zap.String("name", r.Name))
 					continue CredentialLoop
@@ -298,11 +362,11 @@ RequestLoop:
 				log.Error("no credentials returned by provider")
 				continue CredentialLoop
 			}
-			state.AddResource(newResource(r, storeConfig.alias(), creds[0].Expiration, metadata))
+			state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
 			log.Info("created new credentials", zap.Int("count", len(creds)))
 
 			for _, c := range creds {
-				path, err := store.Write(config.Namespace, c, storeConfig.Config)
+				path, err := store.Write(config.Namespace(), c, storeConfig.Config)
 				if err != nil {
 					log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 					continue

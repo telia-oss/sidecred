@@ -8,6 +8,7 @@ import (
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/s3"
 	"github.com/telia-oss/sidecred/backend/s3/s3fakes"
+	"github.com/telia-oss/sidecred/config"
 	"github.com/telia-oss/sidecred/internal/cli"
 	"github.com/telia-oss/sidecred/provider/sts"
 	"github.com/telia-oss/sidecred/provider/sts/stsfakes"
@@ -22,7 +23,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
-	"sigs.k8s.io/yaml"
 )
 
 func testAWSClientFactory() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI) {
@@ -59,7 +59,7 @@ func TestCLI(t *testing.T) {
 				return l, nil
 			}
 
-			config := strings.TrimSpace(`
+			cfg := strings.TrimSpace(`
 ---
 version: 1
 namespace: example
@@ -77,11 +77,11 @@ requests:
             `)
 
 			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend) error {
-				var c sidecred.Config
-				if err := yaml.UnmarshalStrict([]byte(config), &c); err != nil {
-					return fmt.Errorf("failed to unmarshal config: %s", err)
+				c, err := config.Parse([]byte(cfg))
+				if err != nil {
+					return fmt.Errorf("failed to parse config: %s", err)
 				}
-				return s.Process(&c, &sidecred.State{})
+				return s.Process(c, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)

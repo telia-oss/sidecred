@@ -1,17 +1,17 @@
-package sidecred_test
+package config_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/yaml"
 )
 
-func TestConfig(t *testing.T) {
+func TestV1Config(t *testing.T) {
 	tests := []struct {
 		description             string
 		config                  string
@@ -123,22 +123,22 @@ requests:
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			var (
-				config *sidecred.Config
+				cfg    sidecred.Config
 				actual string
 				err    error
 			)
 
-			err = yaml.Unmarshal([]byte(tc.config), &config)
+			cfg, err = config.Parse([]byte(tc.config))
 			require.NoError(t, err)
 
-			err = config.Validate()
+			err = cfg.Validate()
 			if err != nil {
 				actual = err.Error()
 			}
 			assert.Equal(t, tc.expected, actual)
-			assert.Equal(t, tc.expectedRequestCount, len(config.Requests))
+			assert.Equal(t, tc.expectedRequestCount, len(cfg.Requests()))
 			for i, expectedCount := range tc.expectedCountPerRequest {
-				assert.Equal(t, expectedCount, len(config.Requests[i].CredentialRequests()))
+				assert.Equal(t, expectedCount, len(cfg.Requests()[i].Credentials))
 			}
 		})
 	}

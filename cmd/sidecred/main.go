@@ -6,10 +6,10 @@ import (
 	"os"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
 	"github.com/telia-oss/sidecred/internal/cli"
 
 	"github.com/alecthomas/kingpin"
-	"sigs.k8s.io/yaml"
 )
 
 var version string
@@ -25,21 +25,21 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(namespace *string, config *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
+func runFunc(namespace *string, cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
-		b, err := ioutil.ReadFile(*config)
+		b, err := ioutil.ReadFile(*cfg)
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
 		}
-		var config sidecred.Config
-		if err := yaml.UnmarshalStrict(b, &config); err != nil {
-			return fmt.Errorf("failed to unmarshal config: %s", err)
+		cfg, err := config.Parse(b)
+		if err != nil {
+			return fmt.Errorf("failed to parse config: %s", err)
 		}
 		state, err := backend.Load(*statePath)
 		if err != nil {
 			return fmt.Errorf("failed to load state: %s", err)
 		}
 		defer backend.Save(*statePath, state)
-		return s.Process(&config, state)
+		return s.Process(cfg, state)
 	}
 }

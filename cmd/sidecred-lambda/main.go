@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
 	"github.com/telia-oss/sidecred/internal/cli"
 
 	"github.com/alecthomas/kingpin"
@@ -15,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	environment "github.com/telia-oss/aws-env"
-	"sigs.k8s.io/yaml"
 )
 
 var version string
@@ -55,7 +55,7 @@ type Event struct {
 func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
 		lambda.Start(func(event Event) error {
-			config, err := loadConfig(*configBucket, event.ConfigPath)
+			cfg, err := loadConfig(*configBucket, event.ConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %s", err)
 			}
@@ -64,13 +64,13 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 				return fmt.Errorf("failed to load state: %s", err)
 			}
 			defer backend.Save(event.StatePath, state)
-			return s.Process(config, state)
+			return s.Process(cfg, state)
 		})
 		return nil
 	}
 }
 
-func loadConfig(bucket, key string) (*sidecred.Config, error) {
+func loadConfig(bucket, key string) (sidecred.Config, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, err
@@ -91,9 +91,5 @@ func loadConfig(bucket, key string) (*sidecred.Config, error) {
 		return nil, err
 	}
 
-	var config sidecred.Config
-	if err := yaml.UnmarshalStrict(b.Bytes(), &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
+	return config.Parse(b.Bytes())
 }
