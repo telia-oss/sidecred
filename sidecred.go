@@ -13,17 +13,31 @@ import (
 	"go.uber.org/zap"
 )
 
-// Config represents the user-defined configuration that should be passed to the sidecred.Sidecred.Process method.
-type Config interface {
-	Namespace() string
-	Stores() []*StoreConfig
-	Requests() []*Request
+// Validatable allows sidecred to ensure the validity of the opaque config values used for processing a request.
+type Validatable interface {
 	Validate() error
 }
 
-// Request ...
-type Request struct {
-	Store       string
+// Config represents the user-defined configuration that should be passed when processing credentials using sidecred.
+type Config interface {
+	Validatable
+
+	// A namespace (e.g. the name of a team, project or similar) to use when processing the credential requests.
+	Namespace() string
+
+	// One or more secret stores that can be targeted when mapping credentials.
+	Stores() []*StoreConfig
+
+	// A list of credential requests that map credentials to a secret store.
+	Requests() []*CredentialsMap
+}
+
+// CredentialsMap represents a mapping between one or more credential request and a target secret store.
+type CredentialsMap struct {
+	// Store identifies the name or alias of the target secret store.
+	Store string
+
+	// Credentials that will be provisioned and written to the secret store.
 	Credentials []*CredentialRequest
 }
 
@@ -43,8 +57,7 @@ type CredentialRequest struct {
 	// for possibly longer running authentications or processes.
 	RotationWindow *Duration `json:"rotation_window"`
 
-	// Config holds the specific configuration for the requested credential
-	// type, and must be deserialized by the provider when Create is called.
+	// Config holds the provider configuration for the requested credential.
 	Config json.RawMessage `json:"config"`
 }
 

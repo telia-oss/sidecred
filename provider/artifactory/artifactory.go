@@ -33,6 +33,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
+var _ sidecred.Validatable = &RequestConfig{}
+
 // RequestConfig ...
 // The generated secrets will be `<name>-artifactory-user` and
 // `<name>-artifactory-token`.
@@ -62,6 +64,17 @@ type RequestConfig struct {
 
 	// Request-specific override for credential duration.
 	Duration *sidecred.Duration `json:"duration"`
+}
+
+// Validate implements sidecred.Validatable.
+func (c *RequestConfig) Validate() error {
+	if c.User == "" {
+		return fmt.Errorf("%q must be defined", "user")
+	}
+	if c.Group == "" {
+		return fmt.Errorf("%q must be defined", "group")
+	}
+	return nil
 }
 
 // NewClient returns a new client for ArtifactoryAPI.

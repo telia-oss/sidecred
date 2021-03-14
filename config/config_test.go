@@ -113,10 +113,34 @@ requests:
         duration: 15m
     - type: aws:sts
       name: open-source-dev-read-only
+      config:
+        role_arn: arn:aws:iam::role/role-name
             `),
 			expected:                `requests[0]: creds[1]: duplicated request {store:secretsmanager name:open-source-dev-read-only}`,
 			expectedRequestCount:    1,
 			expectedCountPerRequest: []int{2},
+		},
+		{
+			description: "errors invalid provider config",
+			config: strings.TrimSpace(`
+---
+version: 1
+namespace: cloudops
+
+stores:
+  - type: secretsmanager
+
+requests:
+  - store: secretsmanager
+    creds:
+    - type: aws:sts
+      name: credential-name
+      config:
+        role_arn: ''
+            `),
+			expected:                `requests[0]: creds[0]: invalid config: "role_arn" must be defined`,
+			expectedRequestCount:    1,
+			expectedCountPerRequest: []int{1},
 		},
 	}
 

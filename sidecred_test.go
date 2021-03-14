@@ -265,6 +265,8 @@ requests:
   creds:
   - type: aws:sts
     name: fake.state.id
+    config:
+      role_arn: arn:aws:iam::role/role-name
 			`),
 			resources:         []*sidecred.Resource{},
 			expectedSecrets:   map[string]string{},

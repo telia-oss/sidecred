@@ -8,9 +8,16 @@ import (
 	"github.com/telia-oss/sidecred"
 )
 
+var _ sidecred.Validatable = &RequestConfig{}
+
 // RequestConfig ...
 type RequestConfig struct {
 	Length int `json:"length"`
+}
+
+// Validate implements sidecred.Validatable.
+func (c *RequestConfig) Validate() error {
+	return nil
 }
 
 // New returns a new sidecred.Provider for random strings.

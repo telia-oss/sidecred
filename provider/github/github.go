@@ -21,6 +21,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+var (
+	_ sidecred.Validatable = &DeployKeyRequestConfig{}
+	_ sidecred.Validatable = &AccessTokenRequestConfig{}
+)
+
 // DeployKeyRequestConfig ...
 type DeployKeyRequestConfig struct {
 	Owner      string `json:"owner"`
@@ -29,11 +34,33 @@ type DeployKeyRequestConfig struct {
 	ReadOnly   bool   `json:"read_only"`
 }
 
+// Validate implements sidecred.Validatable.
+func (c *DeployKeyRequestConfig) Validate() error {
+	if c.Owner == "" {
+		return fmt.Errorf("%q must be defined", "owner")
+	}
+	if c.Repository == "" {
+		return fmt.Errorf("%q must be defined", "repository")
+	}
+	if c.Repository == "" {
+		return fmt.Errorf("%q must be defined", "title")
+	}
+	return nil
+}
+
 // AccessTokenRequestConfig ...
 type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
+}
+
+// Validate implements sidecred.Validatable.
+func (c *AccessTokenRequestConfig) Validate() error {
+	if c.Owner == "" {
+		return fmt.Errorf("%q must be defined", "owner")
+	}
+	return nil
 }
 
 // New returns a new sidecred.Provider for Github credentials.

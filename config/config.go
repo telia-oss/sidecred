@@ -1,7 +1,13 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/telia-oss/sidecred/provider/artifactory"
+	"github.com/telia-oss/sidecred/provider/github"
+	"github.com/telia-oss/sidecred/provider/random"
+	"github.com/telia-oss/sidecred/provider/sts"
 
 	"github.com/telia-oss/sidecred"
 	"sigs.k8s.io/yaml"
@@ -33,9 +39,7 @@ func Parse(b []byte) (cfg sidecred.Config, err error) {
 	return cfg, nil
 }
 
-var (
-	_ sidecred.Config = &v1{}
-)
+var _ sidecred.Config = &v1{}
 
 type v1 struct {
 	Version             int                     `json:"version"`
@@ -55,9 +59,9 @@ func (c *v1) Stores() []*sidecred.StoreConfig {
 }
 
 // Requests implements sidecred.Config.
-func (c *v1) Requests() (out []*sidecred.Request) {
+func (c *v1) Requests() (out []*sidecred.CredentialsMap) {
 	for _, r := range c.CredentialRequests {
-		out = append(out, r.asRequest())
+		out = append(out, r.credentialsMap())
 	}
 	return out
 }
@@ -96,10 +100,12 @@ func (c *v1) Validate() error {
 				return fmt.Errorf("requests[%d]: creds[%d]: %s", i, ii, err)
 			}
 			for _, r := range cred.flatten() {
-				switch r.Type {
-				case sidecred.AWSSTS, sidecred.GithubAccessToken, sidecred.GithubDeployKey, sidecred.ArtifactoryAccessToken, sidecred.Randomized:
-				default:
-					return fmt.Errorf("requests[%d]: creds[%d]: unknown type %q", i, ii, string(r.Type))
+				c, err := parseProviderConfig(r.Type, r.Config)
+				if err != nil {
+					return fmt.Errorf("requests[%d]: creds[%d]: parse config: %s", i, ii, err)
+				}
+				if err := c.Validate(); err != nil {
+					return fmt.Errorf("requests[%d]: creds[%d]: invalid config: %s", i, ii, err)
 				}
 				key := requestsKey{store: request.Store, name: r.Name}
 				if _, found := requests[key]; found {
@@ -117,8 +123,8 @@ type requestV1 struct {
 	Creds []*credentialRequest `json:"creds"`
 }
 
-func (c *requestV1) asRequest() *sidecred.Request {
-	r := &sidecred.Request{
+func (c *requestV1) credentialsMap() *sidecred.CredentialsMap {
+	r := &sidecred.CredentialsMap{
 		Store: c.Store,
 	}
 	for _, cred := range c.Creds {
@@ -173,4 +179,27 @@ func (c *credentialRequest) flatten() []*sidecred.CredentialRequest {
 		requests = append(requests, r)
 	}
 	return requests
+}
+
+// parseProviderConfig from JSON.
+func parseProviderConfig(t sidecred.CredentialType, config json.RawMessage) (sidecred.Validatable, error) {
+	var c sidecred.Validatable
+	switch t {
+	case sidecred.AWSSTS:
+		c = &sts.RequestConfig{}
+	case sidecred.GithubAccessToken:
+		c = &github.AccessTokenRequestConfig{}
+	case sidecred.GithubDeployKey:
+		c = &github.DeployKeyRequestConfig{}
+	case sidecred.ArtifactoryAccessToken:
+		c = &artifactory.RequestConfig{}
+	case sidecred.Randomized:
+		c = &random.RequestConfig{}
+	default:
+		return nil, fmt.Errorf("unknown type %q", string(t))
+	}
+	if err := sidecred.UnmarshalConfig(config, c); err != nil {
+		return nil, fmt.Errorf("unmarshal config: %s", err)
+	}
+	return c, nil
 }

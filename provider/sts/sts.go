@@ -12,10 +12,23 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
+var _ sidecred.Validatable = &RequestConfig{}
+
 // RequestConfig ...
 type RequestConfig struct {
 	RoleARN  string             `json:"role_arn"`
 	Duration *sidecred.Duration `json:"duration"`
+}
+
+// Validate implements sidecred.Validatable.
+func (c *RequestConfig) Validate() error {
+	if c.RoleARN == "" {
+		return fmt.Errorf("%q must be defined", "role_arn")
+	}
+	if c.Duration != nil && c.Duration.Seconds() < 900 {
+		return fmt.Errorf("%q must be minimum 15min", "duration")
+	}
+	return nil
 }
 
 // NewClient returns a new client for STSAPI.
