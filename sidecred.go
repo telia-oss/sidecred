@@ -335,6 +335,10 @@ RequestLoop:
 				storeConfig = sc
 			}
 		}
+		if storeConfig == nil {
+			log.Warn("could not find config for store", zap.String("store", request.Store))
+			continue RequestLoop
+		}
 		if _, enabled := s.stores[storeConfig.Type]; !enabled {
 			log.Warn("store type is not enabled", zap.String("storeType", request.Store))
 			continue RequestLoop
