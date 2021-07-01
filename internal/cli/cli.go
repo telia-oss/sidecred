@@ -38,6 +38,7 @@ type (
 func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClientFactory, newLogger loggerFactory) *kingpin.CmdClause {
 	var (
 		cmd                                = app.Command("run", "Run sidecred.")
+		randomProviderDisabled             = cmd.Flag("random-provider-disabled", "Disable the random provider").Bool()
 		randomProviderRotationInterval     = cmd.Flag("random-provider-rotation-interval", "Rotation interval for the random provider").Default("168h").Duration()
 		stsProviderEnabled                 = cmd.Flag("sts-provider-enabled", "Enable the STS provider").Bool()
 		stsProviderExternalID              = cmd.Flag("sts-provider-external-id", "External ID for the STS Provider").String()
@@ -83,7 +84,7 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		defer logger.Sync()
 
 		var providers []sidecred.Provider
-		{
+		if !*randomProviderDisabled {
 			p := random.New(time.Now().UnixNano(), random.Options{
 				RotationInterval: *randomProviderRotationInterval,
 			})
