@@ -99,29 +99,25 @@ func NewClient(hostname string, username string, password string, accessToken st
 }
 
 // New returns a new sidecred.Provider for Artifactory Credentials.
-func New(client ArtifactoryAPI, options ...option) sidecred.Provider {
-	p := &provider{
-		client:          client,
-		sessionDuration: 1 * time.Hour,
+func New(client ArtifactoryAPI, opts Options) sidecred.Provider {
+	if opts.SessionDuration == 0 {
+		opts.SessionDuration = 1 * time.Hour
 	}
-	for _, optionFunc := range options {
-		optionFunc(p)
+	return &provider{
+		client:  client,
+		options: opts,
 	}
-	return p
 }
 
-type option func(*provider)
-
-// WithSessionDuration overrides the default session duration.
-func WithSessionDuration(duration time.Duration) option {
-	return func(p *provider) {
-		p.sessionDuration = duration
-	}
+// Options for the provider.
+type Options struct {
+	// SessionDuration overrides the default session duration.
+	SessionDuration time.Duration
 }
 
 type provider struct {
-	client          ArtifactoryAPI
-	sessionDuration time.Duration
+	client  ArtifactoryAPI
+	options Options
 }
 
 // Type implements sidecred.Provider.
@@ -135,7 +131,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	duration := int(p.sessionDuration.Seconds())
+	duration := int(p.options.SessionDuration.Seconds())
 	if c.Duration != nil {
 		duration = int(c.Duration.Seconds())
 	}

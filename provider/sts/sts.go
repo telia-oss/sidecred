@@ -37,38 +37,28 @@ func NewClient(sess *session.Session) STSAPI {
 }
 
 // New returns a new sidecred.Provider for STS Credentials.
-func New(client STSAPI, options ...option) sidecred.Provider {
-	p := &provider{
-		client:          client,
-		sessionDuration: 1 * time.Hour,
-		externalID:      "",
+func New(client STSAPI, opts Options) sidecred.Provider {
+	if opts.SessionDuration == 0 {
+		opts.SessionDuration = 1 * time.Hour
 	}
-	for _, optionFunc := range options {
-		optionFunc(p)
-	}
-	return p
-}
-
-type option func(*provider)
-
-// WithSessionDuration overrides the default session duration.
-func WithSessionDuration(duration time.Duration) option {
-	return func(p *provider) {
-		p.sessionDuration = duration
+	return &provider{
+		client:  client,
+		options: opts,
 	}
 }
 
-// WithExternalID sets the external ID used to assume roles.
-func WithExternalID(id string) option {
-	return func(p *provider) {
-		p.externalID = id
-	}
+// Options for the provider.
+type Options struct {
+	// SessionDuration specifies the session duration.
+	SessionDuration time.Duration
+
+	// ExternalID sets the external ID used to assume roles.
+	ExternalID string
 }
 
 type provider struct {
-	client          STSAPI
-	sessionDuration time.Duration
-	externalID      string
+	client  STSAPI
+	options Options
 }
 
 // Type implements sidecred.Provider.
@@ -82,17 +72,17 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	duration := int64(p.sessionDuration.Seconds())
+	duration := p.options.SessionDuration.Seconds()
 	if c.Duration != nil {
-		duration = int64(c.Duration.Seconds())
+		duration = c.Duration.Seconds()
 	}
 	input := &sts.AssumeRoleInput{
 		RoleSessionName: aws.String(request.Name),
 		RoleArn:         aws.String(c.RoleARN),
-		DurationSeconds: aws.Int64(duration),
+		DurationSeconds: aws.Int64(int64(duration)),
 	}
-	if p.externalID != "" {
-		input.SetExternalId(p.externalID)
+	if p.options.ExternalID != "" {
+		input.SetExternalId(p.options.ExternalID)
 	}
 	output, err := p.client.AssumeRole(input)
 	if err != nil {

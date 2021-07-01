@@ -75,11 +75,10 @@ func TestSTSProvider(t *testing.T) {
 					Expiration:      aws.Time(time.Now().UTC()),
 				}}, nil)
 
-			p := provider.New(
-				fakeSTSAPI,
-				provider.WithSessionDuration(tc.sessionDuration),
-				provider.WithExternalID(tc.externalID),
-			)
+			p := provider.New(fakeSTSAPI, provider.Options{
+				SessionDuration: tc.sessionDuration,
+				ExternalID:      tc.externalID,
+			})
 
 			creds, metadata, err := p.Create(tc.request)
 			require.NoError(t, err)

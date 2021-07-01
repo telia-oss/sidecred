@@ -52,10 +52,9 @@ func TestArtifactoryProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			p := provider.New(
-				client,
-				provider.WithSessionDuration(15*time.Minute),
-			)
+			p := provider.New(client, provider.Options{
+				SessionDuration: 15 * time.Minute,
+			})
 
 			_, _, err = p.Create(&sidecred.CredentialRequest{
 				Type:   sidecred.ArtifactoryAccessToken,

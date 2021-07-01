@@ -62,7 +62,7 @@ func TestRandomProvider(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			p := provider.New(tc.seed)
+			p := provider.New(tc.seed, provider.Options{})
 
 			creds, metadata, err := p.Create(tc.request)
 			require.NoError(t, err)

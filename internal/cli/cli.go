@@ -82,40 +82,46 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		}
 		defer logger.Sync()
 
-		providers := []sidecred.Provider{random.New(
-			time.Now().UnixNano(),
-			random.WithRotationInterval(*randomProviderRotationInterval),
-		)}
+		var providers []sidecred.Provider
+		{
+			p := random.New(time.Now().UnixNano(), random.Options{
+				RotationInterval: *randomProviderRotationInterval,
+			})
+			providers = append(providers, p)
+		}
 		if *stsProviderEnabled {
-			_, client, _, _ := newAWSClient()
-			providers = append(providers, sts.New(client,
-				sts.WithExternalID(*stsProviderExternalID),
-				sts.WithSessionDuration(*stsProviderSessionDuration),
-			))
+			_, c, _, _ := newAWSClient()
+			p := sts.New(c, sts.Options{
+				ExternalID:      *stsProviderExternalID,
+				SessionDuration: *stsProviderSessionDuration,
+			})
+			providers = append(providers, p)
 		}
 		if *githubProviderEnabled {
-			client, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
+			c, err := githubapp.NewClient(*githubProviderIntegrationID, []byte(*githubProviderPrivateKey))
 			if err != nil {
 				logger.Fatal("initialize github provider app", zap.Error(err))
 			}
-			providers = append(providers, github.New(
-				githubapp.New(client),
-				github.WithDeployKeyRotationInterval(*githubProviderKeyRotationInterval),
-			))
+			p := github.New(githubapp.New(c), github.Options{
+				DeployKeyRotationInterval: *githubProviderKeyRotationInterval,
+			})
+			providers = append(providers, p)
 		}
 		if *artifactoryProviderEnabled {
-			client, err := artifactory.NewClient(
+			c, err := artifactory.NewClient(
 				*artifactoryProviderHostname,
 				*artifactoryProviderUsername,
 				*artifactoryProviderPassword,
 				*artifactoryProviderAccessToken,
-				*artifactoryProviderAPIKey)
+				*artifactoryProviderAPIKey,
+			)
 			if err != nil {
 				logger.Fatal("initialize artifactory", zap.Error(err))
 			}
-			providers = append(providers, artifactory.New(client,
-				artifactory.WithSessionDuration(*artifactoryProviderSessionDuration),
-			))
+			p := artifactory.New(c, artifactory.Options{
+				SessionDuration: *artifactoryProviderSessionDuration,
+			})
+			providers = append(providers, p)
 		}
 
 		stores := []sidecred.SecretStore{inprocess.New(
