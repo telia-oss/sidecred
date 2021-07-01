@@ -326,10 +326,7 @@ func (s *Sidecred) Process(config Config, state *State) error {
 
 RequestLoop:
 	for _, request := range config.Requests() {
-		var (
-			store       SecretStore
-			storeConfig *StoreConfig
-		)
+		var storeConfig *StoreConfig
 		for _, sc := range config.Stores() {
 			if sc.Alias() == request.Store {
 				storeConfig = sc
@@ -339,13 +336,9 @@ RequestLoop:
 			log.Warn("could not find config for store", zap.String("store", request.Store))
 			continue RequestLoop
 		}
-		if _, enabled := s.stores[storeConfig.Type]; !enabled {
-			log.Warn("store type is not enabled", zap.String("storeType", request.Store))
-			continue RequestLoop
-		}
-		store = s.stores[storeConfig.Type]
-		if store == nil {
-			log.Warn("store does not exist", zap.String("store", request.Store))
+		store, enabled := s.stores[storeConfig.Type]
+		if !enabled {
+			log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
 			continue RequestLoop
 		}
 
