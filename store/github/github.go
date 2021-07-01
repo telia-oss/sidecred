@@ -153,7 +153,7 @@ func (s *store) Delete(path string, config json.RawMessage) error {
 	resp, err := s.actionsClientFactory(token.GetToken()).DeleteSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
-		if resp.StatusCode != 404 {
+		if resp == nil || resp.StatusCode != 404 {
 			return fmt.Errorf("delete secret: %s", err)
 		}
 	}
