@@ -467,7 +467,7 @@ func (f *fakeProvider) Type() sidecred.ProviderType {
 	return sidecred.Random
 }
 
-func (f *fakeProvider) Create(r *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (f *fakeProvider) Create(_ *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	f.createCallCount++
 	return []*sidecred.Credential{{
 			Name:       "fake-credential",
@@ -478,7 +478,7 @@ func (f *fakeProvider) Create(r *sidecred.CredentialRequest) ([]*sidecred.Creden
 		nil
 }
 
-func (f *fakeProvider) Destroy(r *sidecred.Resource) error {
+func (f *fakeProvider) Destroy(_ *sidecred.Resource) error {
 	f.destroyCallCount++
 	return nil
 }
