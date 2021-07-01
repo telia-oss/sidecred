@@ -21,31 +21,27 @@ func (c *RequestConfig) Validate() error {
 }
 
 // New returns a new sidecred.Provider for random strings.
-func New(seed int64, options ...option) sidecred.Provider {
-	p := &provider{
-		generator:        rand.New(rand.NewSource(seed)),
-		chars:            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*",
-		rotationInterval: time.Hour * 24 * 7,
+func New(seed int64, opts Options) sidecred.Provider {
+	if opts.RotationInterval == 0 {
+		opts.RotationInterval = time.Hour * 24 * 7
 	}
-	for _, optionFunc := range options {
-		optionFunc(p)
+	return &provider{
+		generator: rand.New(rand.NewSource(seed)),
+		chars:     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*",
+		options:   opts,
 	}
-	return p
 }
 
-type option func(*provider)
-
-// WithRotationInterval sets the interval at which the random string should be rotated.
-func WithRotationInterval(duration time.Duration) option {
-	return func(p *provider) {
-		p.rotationInterval = duration
-	}
+// Options for the provider.
+type Options struct {
+	// RotationInterval specifies the interval at which the random string should be rotated.
+	RotationInterval time.Duration
 }
 
 type provider struct {
-	generator        *rand.Rand
-	chars            string
-	rotationInterval time.Duration
+	generator *rand.Rand
+	chars     string
+	options   Options
 }
 
 // Type implements sidecred.Provider.
@@ -68,7 +64,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 			Name:        request.Name,
 			Value:       string(b),
 			Description: "Random generated secret managed by Sidecred.",
-			Expiration:  time.Now().Add(p.rotationInterval).UTC(),
+			Expiration:  time.Now().Add(p.options.RotationInterval).UTC(),
 		},
 	}, nil, nil
 }

@@ -65,11 +65,11 @@ func TestGithubProvider(t *testing.T) {
 			fakeReposAPI := &githubfakes.FakeRepositoriesAPI{}
 			fakeReposAPI.CreateKeyReturns(targetKey, nil, nil)
 
-			p := provider.New(fakeApp,
-				provider.WithReposClientFactory(func(string) provider.RepositoriesAPI {
+			p := provider.New(fakeApp, provider.Options{
+				ReposClientFactory: func(string) provider.RepositoriesAPI {
 					return fakeReposAPI
-				}),
-			)
+				},
+			})
 
 			creds, metadata, err := p.Create(tc.request)
 			require.NoError(t, err)

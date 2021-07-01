@@ -40,11 +40,10 @@ func TestSTSProviderE2E(t *testing.T) {
 			// Sleep so STS has time to learn about the new role (did not work with <10 sec sleep).
 			time.Sleep(10 * time.Second)
 
-			p := provider.New(
-				sts.New(sess),
-				provider.WithSessionDuration(15*time.Minute),
-				provider.WithExternalID("sidecred-e2e-test"),
-			)
+			p := provider.New(sts.New(sess), provider.Options{
+				SessionDuration: 15 * time.Minute,
+				ExternalID:      "sidecred-e2e-test",
+			})
 
 			_, _, err = p.Create(&sidecred.CredentialRequest{
 				Type:   sidecred.AWSSTS,

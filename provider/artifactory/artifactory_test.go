@@ -62,10 +62,9 @@ func TestArtifactoryProvider(t *testing.T) {
 				AccessToken: "access-token",
 			}, nil)
 
-			p := provider.New(
-				fakeArtifactoryAPI,
-				provider.WithSessionDuration(tc.sessionDuration),
-			)
+			p := provider.New(fakeArtifactoryAPI, provider.Options{
+				SessionDuration: tc.sessionDuration,
+			})
 
 			creds, metadata, err := p.Create(tc.request)
 			require.NoError(t, err)

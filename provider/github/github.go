@@ -63,13 +63,18 @@ func (c *AccessTokenRequestConfig) Validate() error {
 }
 
 // New returns a new sidecred.Provider for Github credentials.
-func New(app App, options ...option) sidecred.Provider {
-	p := &provider{
-		app:                 app,
-		keyRotationInterval: time.Hour * 24 * 7,
-		reposClientFactory: func(token string) RepositoriesAPI {
+func New(app App, opts Options) sidecred.Provider {
+	if opts.DeployKeyRotationInterval == 0 {
+		opts.DeployKeyRotationInterval = 24 * 7 * time.Hour
+	}
+	if opts.ReposClientFactory == nil {
+		opts.ReposClientFactory = func(token string) RepositoriesAPI {
 			return githubapp.NewInstallationClient(token).V3.Repositories
-		},
+		}
+	}
+	return &provider{
+		app:     app,
+		options: opts,
 		defaultTokenPermissions: &githubapp.Permissions{
 			Metadata:     github.String("read"),
 			Contents:     github.String("read"),
@@ -77,33 +82,21 @@ func New(app App, options ...option) sidecred.Provider {
 			Statuses:     github.String("write"),
 		},
 	}
-	for _, optionFunc := range options {
-		optionFunc(p)
-	}
-	return p
 }
 
-type option func(*provider)
+// Options for the provider.
+type Options struct {
+	// DeployKeyRotationInterval sets the interval at which deploy keys should be rotated.
+	DeployKeyRotationInterval time.Duration
 
-// WithDeployKeyRotationInterval sets the interval at which deploy keys should be rotated.
-func WithDeployKeyRotationInterval(duration time.Duration) option {
-	return func(p *provider) {
-		p.keyRotationInterval = duration
-	}
-}
-
-// WithReposClientFactory sets the function used to create new installation clients, and can be used to return test fakes.
-func WithReposClientFactory(f func(token string) RepositoriesAPI) option {
-	return func(p *provider) {
-		p.reposClientFactory = f
-	}
+	// ReposClientFactory sets the function used to create new installation clients, and can be used to return test fakes.
+	ReposClientFactory func(token string) RepositoriesAPI
 }
 
 // Implements sidecred.Provider for Github Credentials.
 type provider struct {
 	app                     App
-	reposClientFactory      func(token string) RepositoriesAPI
-	keyRotationInterval     time.Duration
+	options                 Options
 	defaultTokenPermissions *githubapp.Permissions
 }
 
@@ -161,7 +154,7 @@ func (p *provider) createDeployKey(request *sidecred.CredentialRequest) ([]*side
 		return nil, nil, fmt.Errorf("generate key pair: %s", err)
 	}
 
-	key, _, err := p.reposClientFactory(token.GetToken()).CreateKey(context.TODO(), c.Owner, c.Repository, &github.Key{
+	key, _, err := p.options.ReposClientFactory(token.GetToken()).CreateKey(context.TODO(), c.Owner, c.Repository, &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
@@ -177,7 +170,7 @@ func (p *provider) createDeployKey(request *sidecred.CredentialRequest) ([]*side
 		Name:        c.Repository + "-deploy-key",
 		Value:       privateKey,
 		Description: "Github deploy key managed by sidecred.",
-		Expiration:  key.GetCreatedAt().Add(p.keyRotationInterval).UTC(),
+		Expiration:  key.GetCreatedAt().Add(p.options.DeployKeyRotationInterval).UTC(),
 	}}, metadata, nil
 }
 
@@ -223,7 +216,7 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 	if err != nil {
 		return fmt.Errorf("create administrator access token: %s", err)
 	}
-	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
+	resp, err := p.options.ReposClientFactory(token.GetToken()).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
 	if err != nil {
 		// Ignore error if status code is 404 (key not found)
 		if resp == nil || resp.StatusCode != 404 {

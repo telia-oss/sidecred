@@ -55,7 +55,7 @@ func TestGithubProviderE2E(t *testing.T) {
 				),
 			}
 
-			p := provider.New(githubapp.New(client))
+			p := provider.New(githubapp.New(client), provider.Options{})
 			_, metadata, err := p.Create(request)
 			require.NoError(t, err)
 
