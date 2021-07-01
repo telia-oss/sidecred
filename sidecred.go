@@ -41,12 +41,12 @@ type CredentialsMap struct {
 	Credentials []*CredentialRequest
 }
 
-// CredentialRequest is the root datastructure used to request credentials in Sidecred.
+// CredentialRequest is the structure used to request credentials in Sidecred.
 type CredentialRequest struct {
 	// Type identifies the type of credential (and provider) for a request.
 	Type CredentialType `json:"type"`
 
-	// Name is an indentifier that can be used for naming resources and
+	// Name is an identifier that can be used for naming resources and
 	// credentials created by a sidecred.Provider. The exact usage for
 	// name is up to the individual provider.
 	Name string `json:"name"`
@@ -307,7 +307,7 @@ func New(providers []Provider, stores []SecretStore, rotationWindow time.Duratio
 	return s, nil
 }
 
-// Sidecred is the underlying datastructure for the service.
+// Sidecred is the underlying structure for the service.
 type Sidecred struct {
 	providers      map[ProviderType]Provider
 	stores         map[StoreType]SecretStore

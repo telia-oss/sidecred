@@ -32,7 +32,7 @@ func New(client SecretsManagerAPI, options ...option) sidecred.SecretStore {
 
 type option func(*store)
 
-// WithSecretTemplate sets the path template when instanciating a new store.
+// WithSecretTemplate sets the path template when instantiating a new store.
 func WithSecretTemplate(t string) option {
 	return func(s *store) {
 		s.secretTemplate = t

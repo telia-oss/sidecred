@@ -166,7 +166,7 @@ func (s *State) AddSecret(c *StoreConfig, secret *Secret) {
 }
 
 // ListOrphanedSecrets lists all secrets tied to missing resource
-// IDs that should be considered orhpaned.
+// IDs that should be considered orphaned.
 func (s *State) ListOrphanedSecrets(c *StoreConfig) []*Secret {
 	validResourceIDs := make(map[string]struct{})
 	for _, p := range s.Providers {
