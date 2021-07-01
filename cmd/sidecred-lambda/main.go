@@ -22,7 +22,7 @@ var version string
 
 func main() {
 	var (
-		app    = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
+		app    = kingpin.New("sidecred", "Sideload your credentials.").Version(version).UsageWriter(os.Stdout).ErrorWriter(os.Stdout).DefaultEnvars()
 		bucket = app.Flag("config-bucket", "Name of the S3 bucket where the config is stored.").Required().String()
 	)
 
