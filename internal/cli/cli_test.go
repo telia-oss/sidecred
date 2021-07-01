@@ -85,7 +85,7 @@ requests:
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)
-			cli.Setup(app, runFunc, testAWSClientFactory, loggerFactory)
+			cli.AddRunCommand(app, runFunc, testAWSClientFactory, loggerFactory).Default()
 
 			_, err := app.Parse(tc.command)
 			require.NoError(t, err)

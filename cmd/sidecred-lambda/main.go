@@ -41,7 +41,7 @@ func main() {
 		panic(fmt.Errorf("failed to populate environment: %s", err))
 	}
 
-	cli.Setup(app, runFunc(bucket), nil, nil)
+	cli.AddRunCommand(app, runFunc(bucket), nil, nil).Default()
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 

@@ -21,7 +21,24 @@ func main() {
 		configPath = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 		statePath  = app.Flag("state", "Path to use for storing state in a file backend").Default("state.json").String()
 	)
-	cli.Setup(app, runFunc(namespace, configPath, statePath), nil, nil)
+	cli.AddRunCommand(app, runFunc(configPath, statePath), nil, nil).Default()
+
+	validate := app.Command("validate", "Validate a sidecred config.")
+	validate.Action(func(_ *kingpin.ParseContext) error {
+		b, err := ioutil.ReadFile(*configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read config: %s", err)
+		}
+		cfg, err := config.Parse(b)
+		if err != nil {
+			return fmt.Errorf("failed to parse config: %s", err)
+		}
+		if err := cfg.Validate(); err != nil {
+			kingpin.Fatalf("validate: %s", err)
+		}
+		return nil
+	})
+
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
