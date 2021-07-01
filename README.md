@@ -129,5 +129,5 @@ After setting the above you can execute `sidecred` as follows:
 ```bash
 # The Github App credentials (integration ID and private key) and AWS STS credentials
 # should be populated using e.g. vaulted or aws-vault:
-go run ./cmd/sidecred --namespace e2e --config ./cmd/sidecred/testdata/config.yml
+go run ./cmd/sidecred --config ./cmd/sidecred/testdata/config.yml
 ```

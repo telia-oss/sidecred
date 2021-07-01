@@ -17,7 +17,6 @@ var version string
 func main() {
 	var (
 		app        = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
-		namespace  = app.Flag("namespace", "Namespace to use when processing the requests.").Required().String()
 		configPath = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 		statePath  = app.Flag("state", "Path to use for storing state in a file backend").Default("state.json").String()
 	)
@@ -42,7 +41,7 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(namespace *string, cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
+func runFunc(cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
 		b, err := ioutil.ReadFile(*cfg)
 		if err != nil {

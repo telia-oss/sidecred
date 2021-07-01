@@ -47,7 +47,6 @@ func main() {
 
 // Event is the expected payload sent to the Lambda.
 type Event struct {
-	Namespace  string `json:"namespace"`
 	ConfigPath string `json:"config_path"`
 	StatePath  string `json:"state_path"`
 }
