@@ -172,7 +172,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(resource *sidecred.Resource) error {
+func (p *provider) Destroy(_ *sidecred.Resource) error {
 	return nil
 }
 
