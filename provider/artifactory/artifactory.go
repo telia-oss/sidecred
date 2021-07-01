@@ -102,7 +102,7 @@ func NewClient(hostname string, username string, password string, accessToken st
 func New(client ArtifactoryAPI, options ...option) sidecred.Provider {
 	p := &provider{
 		client:          client,
-		sessionDuration: time.Duration(1 * time.Hour),
+		sessionDuration: 1 * time.Hour,
 	}
 	for _, optionFunc := range options {
 		optionFunc(p)

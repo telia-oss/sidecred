@@ -40,7 +40,7 @@ func NewClient(sess *session.Session) STSAPI {
 func New(client STSAPI, options ...option) sidecred.Provider {
 	p := &provider{
 		client:          client,
-		sessionDuration: time.Duration(1 * time.Hour),
+		sessionDuration: 1 * time.Hour,
 		externalID:      "",
 	}
 	for _, optionFunc := range options {

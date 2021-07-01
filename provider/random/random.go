@@ -25,7 +25,7 @@ func New(seed int64, options ...option) sidecred.Provider {
 	p := &provider{
 		generator:        rand.New(rand.NewSource(seed)),
 		chars:            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*",
-		rotationInterval: time.Duration(time.Hour * 24 * 7),
+		rotationInterval: time.Hour * 24 * 7,
 	}
 	for _, optionFunc := range options {
 		optionFunc(p)

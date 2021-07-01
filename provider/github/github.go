@@ -67,7 +67,7 @@ func (c *AccessTokenRequestConfig) Validate() error {
 func New(app App, options ...option) sidecred.Provider {
 	p := &provider{
 		app:                 app,
-		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
+		keyRotationInterval: time.Hour * 24 * 7,
 		reposClientFactory: func(token string) RepositoriesAPI {
 			return githubapp.NewInstallationClient(token).V3.Repositories
 		},

@@ -194,11 +194,9 @@ func defaultLogger(debug bool) (*zap.Logger, error) {
 
 	// Format timestamps as RFC3339 strings
 	// Adapted from: https://github.com/uber-go/zap/issues/661#issuecomment-520686037
-	config.EncoderConfig.EncodeTime = zapcore.TimeEncoder(
-		func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.UTC().Format(time.RFC3339))
-		},
-	)
+	config.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.UTC().Format(time.RFC3339))
+	}
 
 	if debug {
 		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
