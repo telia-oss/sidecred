@@ -1,4 +1,4 @@
-version: "2"
+version: "3"
 
 env:
   TERM: screen-256color
