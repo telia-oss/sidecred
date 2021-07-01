@@ -129,7 +129,7 @@ func (p *provider) Type() sidecred.ProviderType {
 	return sidecred.Artifactory
 }
 
-// Provide implements sidecred.Provider.
+// Create implements sidecred.Provider.
 func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {

@@ -22,13 +22,13 @@ type Validatable interface {
 type Config interface {
 	Validatable
 
-	// A namespace (e.g. the name of a team, project or similar) to use when processing the credential requests.
+	// Namespace (e.g. the name of a team, project or similar) to use when processing the credential requests.
 	Namespace() string
 
-	// One or more secret stores that can be targeted when mapping credentials.
+	// Stores that can be targeted when mapping credentials.
 	Stores() []*StoreConfig
 
-	// A list of credential requests that map credentials to a secret store.
+	// Requests to map credentials to a secret store.
 	Requests() []*CredentialsMap
 }
 
