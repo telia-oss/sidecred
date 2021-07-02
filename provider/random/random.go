@@ -28,7 +28,7 @@ func New(seed int64, opts Options) sidecred.Provider {
 	return &provider{
 		generator: rand.New(rand.NewSource(seed)),
 		chars:     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*",
-		options:   opts,
+		opts:      opts,
 	}
 }
 
@@ -41,7 +41,7 @@ type Options struct {
 type provider struct {
 	generator *rand.Rand
 	chars     string
-	options   Options
+	opts      Options
 }
 
 // Type implements sidecred.Provider.
@@ -64,7 +64,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 			Name:        request.Name,
 			Value:       string(b),
 			Description: "Random generated secret managed by Sidecred.",
-			Expiration:  time.Now().Add(p.options.RotationInterval).UTC(),
+			Expiration:  time.Now().Add(p.opts.RotationInterval).UTC(),
 		},
 	}, nil, nil
 }

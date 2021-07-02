@@ -42,8 +42,8 @@ func New(client STSAPI, opts Options) sidecred.Provider {
 		opts.SessionDuration = 1 * time.Hour
 	}
 	return &provider{
-		client:  client,
-		options: opts,
+		client: client,
+		opts:   opts,
 	}
 }
 
@@ -57,8 +57,8 @@ type Options struct {
 }
 
 type provider struct {
-	client  STSAPI
-	options Options
+	client STSAPI
+	opts   Options
 }
 
 // Type implements sidecred.Provider.
@@ -72,7 +72,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	duration := p.options.SessionDuration.Seconds()
+	duration := p.opts.SessionDuration.Seconds()
 	if c.Duration != nil {
 		duration = c.Duration.Seconds()
 	}
@@ -81,8 +81,8 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 		RoleArn:         aws.String(c.RoleARN),
 		DurationSeconds: aws.Int64(int64(duration)),
 	}
-	if p.options.ExternalID != "" {
-		input.SetExternalId(p.options.ExternalID)
+	if p.opts.ExternalID != "" {
+		input.SetExternalId(p.opts.ExternalID)
 	}
 	output, err := p.client.AssumeRole(input)
 	if err != nil {

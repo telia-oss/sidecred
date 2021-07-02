@@ -104,8 +104,8 @@ func New(client ArtifactoryAPI, opts Options) sidecred.Provider {
 		opts.SessionDuration = 1 * time.Hour
 	}
 	return &provider{
-		client:  client,
-		options: opts,
+		client: client,
+		opts:   opts,
 	}
 }
 
@@ -116,8 +116,8 @@ type Options struct {
 }
 
 type provider struct {
-	client  ArtifactoryAPI
-	options Options
+	client ArtifactoryAPI
+	opts   Options
 }
 
 // Type implements sidecred.Provider.
@@ -131,7 +131,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	duration := int(p.options.SessionDuration.Seconds())
+	duration := int(p.opts.SessionDuration.Seconds())
 	if c.Duration != nil {
 		duration = int(c.Duration.Seconds())
 	}
