@@ -31,10 +31,10 @@ func Parse(b []byte) (cfg sidecred.Config, err error) {
 		err = yaml.UnmarshalStrict(b, &v1)
 		cfg = v1
 	default:
-		return nil, fmt.Errorf("unknown configuration version: %d", t.Version)
+		return nil, fmt.Errorf("unknown configuration version (v%d)", *t.Version)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal config (version %d): %s", t.Version, err)
+		return nil, fmt.Errorf("unmarshal config (v%d): %s", *t.Version, err)
 	}
 	return cfg, nil
 }
