@@ -1,2 +1,6 @@
 # Build artifacts
 dist/
+
+# Editors
+.idea
+.vscode
