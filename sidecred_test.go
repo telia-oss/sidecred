@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
 	"github.com/telia-oss/sidecred/store/inprocess"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -265,6 +265,8 @@ requests:
   creds:
   - type: aws:sts
     name: fake.state.id
+    config:
+      role_arn: arn:aws:iam::role/role-name
 			`),
 			resources:         []*sidecred.Resource{},
 			expectedSecrets:   map[string]string{},
@@ -328,11 +330,10 @@ requests:
 			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			var config *sidecred.Config
-			err = yaml.UnmarshalStrict([]byte(tc.config), &config)
+			cfg, err := config.Parse([]byte(tc.config))
 			require.NoError(t, err)
 
-			err = s.Process(config, state)
+			err = s.Process(cfg, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
@@ -342,7 +343,7 @@ requests:
 			}
 
 			for k, v := range tc.expectedSecrets {
-				value, found, err := store.Read(k, sidecred.NoConfig)
+				value, found, err := store.Read(k, []byte("{}"))
 				assert.NoError(t, err)
 				assert.True(t, found, "secret exists")
 				assert.Equal(t, v, value)
@@ -430,11 +431,10 @@ stores:
 			s, err := sidecred.New([]sidecred.Provider{provider}, []sidecred.SecretStore{store}, 10*time.Minute, logger)
 			require.NoError(t, err)
 
-			var config *sidecred.Config
-			err = yaml.UnmarshalStrict([]byte(tc.config), &config)
+			cfg, err := config.Parse([]byte(tc.config))
 			require.NoError(t, err)
 
-			err = s.Process(config, state)
+			err = s.Process(cfg, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
 
