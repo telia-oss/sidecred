@@ -26,14 +26,14 @@ func main() {
 	validate.Action(func(_ *kingpin.ParseContext) error {
 		b, err := ioutil.ReadFile(*configPath)
 		if err != nil {
-			return fmt.Errorf("failed to read config: %s", err)
+			app.Fatalf("failed to read config: %s", err)
 		}
 		cfg, err := config.Parse(b)
 		if err != nil {
-			return fmt.Errorf("failed to parse config: %s", err)
+			app.Fatalf("failed to parse config: %s", err)
 		}
 		if err := cfg.Validate(); err != nil {
-			kingpin.Fatalf("validate: %s", err)
+			app.Fatalf("validate: %s", err)
 		}
 		return nil
 	})
