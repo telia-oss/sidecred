@@ -160,7 +160,10 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		if err != nil {
 			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
-		return run(s, backend)
+		if err := run(s, backend); err != nil {
+			logger.Fatal("run failed", zap.Error(err))
+		}
+		return nil
 	})
 	return cmd
 }
