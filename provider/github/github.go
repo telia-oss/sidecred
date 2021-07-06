@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -67,7 +66,7 @@ func (c *AccessTokenRequestConfig) Validate() error {
 func New(app App, options ...option) sidecred.Provider {
 	p := &provider{
 		app:                 app,
-		keyRotationInterval: time.Duration(time.Hour * 24 * 7),
+		keyRotationInterval: time.Hour * 24 * 7,
 		reposClientFactory: func(token string) RepositoriesAPI {
 			return githubapp.NewInstallationClient(token).V3.Repositories
 		},
@@ -225,9 +224,11 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 		return fmt.Errorf("create administrator access token: %s", err)
 	}
 	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
-	if err != nil && resp.StatusCode != http.StatusNotFound {
-		// Ignore error if statuscode is 404 (key not found)
-		return fmt.Errorf("delete deploy key: %s", err)
+	if err != nil {
+		// Ignore error if status code is 404 (key not found)
+		if resp == nil || resp.StatusCode != 404 {
+			return fmt.Errorf("delete deploy key: %s", err)
+		}
 	}
 	return nil
 }

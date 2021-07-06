@@ -25,7 +25,7 @@ func New(seed int64, options ...option) sidecred.Provider {
 	p := &provider{
 		generator:        rand.New(rand.NewSource(seed)),
 		chars:            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*",
-		rotationInterval: time.Duration(time.Hour * 24 * 7),
+		rotationInterval: time.Hour * 24 * 7,
 	}
 	for _, optionFunc := range options {
 		optionFunc(p)
@@ -53,7 +53,7 @@ func (p *provider) Type() sidecred.ProviderType {
 	return sidecred.Random
 }
 
-// Provide implements sidecred.Provider.
+// Create implements sidecred.Provider.
 func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
@@ -74,6 +74,6 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(resource *sidecred.Resource) error {
+func (p *provider) Destroy(_ *sidecred.Resource) error {
 	return nil
 }

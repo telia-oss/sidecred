@@ -34,7 +34,7 @@ func New(app App, options ...option) sidecred.SecretStore {
 
 type option func(*store)
 
-// WithSecretTemplate sets the secret name template when instanciating a new store.
+// WithSecretTemplate sets the secret name template when instantiating a new store.
 func WithSecretTemplate(t string) option {
 	return func(s *store) {
 		s.secretTemplate = t
@@ -153,7 +153,7 @@ func (s *store) Delete(path string, config json.RawMessage) error {
 	resp, err := s.actionsClientFactory(token.GetToken()).DeleteSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
-		if resp.StatusCode != 404 {
+		if resp == nil || resp.StatusCode != 404 {
 			return fmt.Errorf("delete secret: %s", err)
 		}
 	}
@@ -198,7 +198,7 @@ func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *githu
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
-// sanitizeSecretPath replaces all illegal characters in the path with "_" (underscore) and uppercases the name. See link for legal names:
+// sanitizeSecretPath replaces all illegal characters in the path with "_" (underscore) and makes the name uppercase. See link for legal names:
 // https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#naming-your-secrets
 func (s *store) sanitizeSecretPath(path string) (string, error) {
 	re, err := regexp.Compile("[^a-zA-Z0-9]+")

@@ -16,7 +16,7 @@ var version string
 
 func main() {
 	var (
-		app        = kingpin.New("sidecred", "Sideload your credentials.").Version(version).Writer(os.Stdout).DefaultEnvars()
+		app        = kingpin.New("sidecred", "Sideload your credentials.").Version(version).UsageWriter(os.Stdout).ErrorWriter(os.Stdout).DefaultEnvars()
 		configPath = app.Flag("config", "Path to the config file containing the requests").ExistingFile()
 		statePath  = app.Flag("state", "Path to use for storing state in a file backend").Default("state.json").String()
 	)

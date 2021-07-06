@@ -102,7 +102,7 @@ func NewClient(hostname string, username string, password string, accessToken st
 func New(client ArtifactoryAPI, options ...option) sidecred.Provider {
 	p := &provider{
 		client:          client,
-		sessionDuration: time.Duration(1 * time.Hour),
+		sessionDuration: 1 * time.Hour,
 	}
 	for _, optionFunc := range options {
 		optionFunc(p)
@@ -129,7 +129,7 @@ func (p *provider) Type() sidecred.ProviderType {
 	return sidecred.Artifactory
 }
 
-// Provide implements sidecred.Provider.
+// Create implements sidecred.Provider.
 func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
@@ -172,7 +172,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(resource *sidecred.Resource) error {
+func (p *provider) Destroy(_ *sidecred.Resource) error {
 	return nil
 }
 

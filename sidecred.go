@@ -22,13 +22,13 @@ type Validatable interface {
 type Config interface {
 	Validatable
 
-	// A namespace (e.g. the name of a team, project or similar) to use when processing the credential requests.
+	// Namespace (e.g. the name of a team, project or similar) to use when processing the credential requests.
 	Namespace() string
 
-	// One or more secret stores that can be targeted when mapping credentials.
+	// Stores that can be targeted when mapping credentials.
 	Stores() []*StoreConfig
 
-	// A list of credential requests that map credentials to a secret store.
+	// Requests to map credentials to a secret store.
 	Requests() []*CredentialsMap
 }
 
@@ -41,12 +41,12 @@ type CredentialsMap struct {
 	Credentials []*CredentialRequest
 }
 
-// CredentialRequest is the root datastructure used to request credentials in Sidecred.
+// CredentialRequest is the structure used to request credentials in Sidecred.
 type CredentialRequest struct {
 	// Type identifies the type of credential (and provider) for a request.
 	Type CredentialType `json:"type"`
 
-	// Name is an indentifier that can be used for naming resources and
+	// Name is an identifier that can be used for naming resources and
 	// credentials created by a sidecred.Provider. The exact usage for
 	// name is up to the individual provider.
 	Name string `json:"name"`
@@ -307,7 +307,7 @@ func New(providers []Provider, stores []SecretStore, rotationWindow time.Duratio
 	return s, nil
 }
 
-// Sidecred is the underlying datastructure for the service.
+// Sidecred is the underlying structure for the service.
 type Sidecred struct {
 	providers      map[ProviderType]Provider
 	stores         map[StoreType]SecretStore
@@ -326,22 +326,19 @@ func (s *Sidecred) Process(config Config, state *State) error {
 
 RequestLoop:
 	for _, request := range config.Requests() {
-		var (
-			store       SecretStore
-			storeConfig *StoreConfig
-		)
+		var storeConfig *StoreConfig
 		for _, sc := range config.Stores() {
 			if sc.Alias() == request.Store {
 				storeConfig = sc
 			}
 		}
-		if _, enabled := s.stores[storeConfig.Type]; !enabled {
-			log.Warn("store type is not enabled", zap.String("storeType", request.Store))
+		if storeConfig == nil {
+			log.Warn("could not find config for store", zap.String("store", request.Store))
 			continue RequestLoop
 		}
-		store = s.stores[storeConfig.Type]
-		if store == nil {
-			log.Warn("store does not exist", zap.String("store", request.Store))
+		store, enabled := s.stores[storeConfig.Type]
+		if !enabled {
+			log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
 			continue RequestLoop
 		}
 

@@ -40,7 +40,7 @@ func NewClient(sess *session.Session) STSAPI {
 func New(client STSAPI, options ...option) sidecred.Provider {
 	p := &provider{
 		client:          client,
-		sessionDuration: time.Duration(1 * time.Hour),
+		sessionDuration: 1 * time.Hour,
 		externalID:      "",
 	}
 	for _, optionFunc := range options {
@@ -76,7 +76,7 @@ func (p *provider) Type() sidecred.ProviderType {
 	return sidecred.AWS
 }
 
-// Provide implements sidecred.Provider.
+// Create implements sidecred.Provider.
 func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
@@ -122,7 +122,7 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(resource *sidecred.Resource) error {
+func (p *provider) Destroy(_ *sidecred.Resource) error {
 	return nil
 }
 
