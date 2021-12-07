@@ -14,7 +14,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v2
       with: { go-version: 1.14 }
-    - name: Install Taskfile
-      run: curl -sL https://taskfile.dev/install.sh | sh
+    - name: Install task
+      uses: arduino/setup-task@v1
     - name: Run tests
-      run: ./bin/task test
+      run: task test
