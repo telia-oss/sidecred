@@ -8,7 +8,7 @@ import (
 	secretstore "github.com/telia-oss/sidecred/store/github"
 	"github.com/telia-oss/sidecred/store/github/githubfakes"
 
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/telia-oss/githubapp"
 )
@@ -57,7 +57,7 @@ func TestWrite(t *testing.T) {
 			fakeApp.CreateInstallationTokenReturns(&githubapp.Token{InstallationToken: installationToken}, nil)
 
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
-			fakeActionsAPI.CreateOrUpdateSecretReturns(nil, nil)
+			fakeActionsAPI.CreateOrUpdateRepoSecretReturns(nil, nil)
 
 			store := secretstore.New(fakeApp,
 				secretstore.WithSecretTemplate(tc.secretTemplate),
@@ -103,7 +103,7 @@ func TestRead(t *testing.T) {
 			fakeApp.CreateInstallationTokenReturns(&githubapp.Token{InstallationToken: installationToken}, nil)
 
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
-			fakeActionsAPI.GetSecretReturns(&github.Secret{Name: secretValue}, nil, nil)
+			fakeActionsAPI.GetRepoSecretReturns(&github.Secret{Name: secretValue}, nil, nil)
 
 			store := secretstore.New(fakeApp,
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
@@ -144,7 +144,7 @@ func TestDelete(t *testing.T) {
 			fakeApp.CreateInstallationTokenReturns(&githubapp.Token{InstallationToken: installationToken}, nil)
 
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
-			fakeActionsAPI.DeleteSecretReturns(nil, nil)
+			fakeActionsAPI.DeleteRepoSecretReturns(nil, nil)
 
 			store := secretstore.New(fakeApp,
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
@@ -154,7 +154,7 @@ func TestDelete(t *testing.T) {
 			err := store.Delete(tc.secretPath, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
-			assert.Equal(t, 1, fakeActionsAPI.DeleteSecretCallCount())
+			assert.Equal(t, 1, fakeActionsAPI.DeleteRepoSecretCallCount())
 		})
 	}
 }

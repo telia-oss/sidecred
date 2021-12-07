@@ -5,74 +5,74 @@ import (
 	"context"
 	"sync"
 
-	githuba "github.com/google/go-github/v29/github"
+	githuba "github.com/google/go-github/v41/github"
 	"github.com/telia-oss/sidecred/store/github"
 )
 
 type FakeActionsAPI struct {
-	CreateOrUpdateSecretStub        func(context.Context, string, string, *githuba.EncryptedSecret) (*githuba.Response, error)
-	createOrUpdateSecretMutex       sync.RWMutex
-	createOrUpdateSecretArgsForCall []struct {
+	CreateOrUpdateRepoSecretStub        func(context.Context, string, string, *githuba.EncryptedSecret) (*githuba.Response, error)
+	createOrUpdateRepoSecretMutex       sync.RWMutex
+	createOrUpdateRepoSecretArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 *githuba.EncryptedSecret
 	}
-	createOrUpdateSecretReturns struct {
+	createOrUpdateRepoSecretReturns struct {
 		result1 *githuba.Response
 		result2 error
 	}
-	createOrUpdateSecretReturnsOnCall map[int]struct {
+	createOrUpdateRepoSecretReturnsOnCall map[int]struct {
 		result1 *githuba.Response
 		result2 error
 	}
-	DeleteSecretStub        func(context.Context, string, string, string) (*githuba.Response, error)
-	deleteSecretMutex       sync.RWMutex
-	deleteSecretArgsForCall []struct {
+	DeleteRepoSecretStub        func(context.Context, string, string, string) (*githuba.Response, error)
+	deleteRepoSecretMutex       sync.RWMutex
+	deleteRepoSecretArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 string
 	}
-	deleteSecretReturns struct {
+	deleteRepoSecretReturns struct {
 		result1 *githuba.Response
 		result2 error
 	}
-	deleteSecretReturnsOnCall map[int]struct {
+	deleteRepoSecretReturnsOnCall map[int]struct {
 		result1 *githuba.Response
 		result2 error
 	}
-	GetPublicKeyStub        func(context.Context, string, string) (*githuba.PublicKey, *githuba.Response, error)
-	getPublicKeyMutex       sync.RWMutex
-	getPublicKeyArgsForCall []struct {
+	GetRepoPublicKeyStub        func(context.Context, string, string) (*githuba.PublicKey, *githuba.Response, error)
+	getRepoPublicKeyMutex       sync.RWMutex
+	getRepoPublicKeyArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 	}
-	getPublicKeyReturns struct {
+	getRepoPublicKeyReturns struct {
 		result1 *githuba.PublicKey
 		result2 *githuba.Response
 		result3 error
 	}
-	getPublicKeyReturnsOnCall map[int]struct {
+	getRepoPublicKeyReturnsOnCall map[int]struct {
 		result1 *githuba.PublicKey
 		result2 *githuba.Response
 		result3 error
 	}
-	GetSecretStub        func(context.Context, string, string, string) (*githuba.Secret, *githuba.Response, error)
-	getSecretMutex       sync.RWMutex
-	getSecretArgsForCall []struct {
+	GetRepoSecretStub        func(context.Context, string, string, string) (*githuba.Secret, *githuba.Response, error)
+	getRepoSecretMutex       sync.RWMutex
+	getRepoSecretArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 string
 	}
-	getSecretReturns struct {
+	getRepoSecretReturns struct {
 		result1 *githuba.Secret
 		result2 *githuba.Response
 		result3 error
 	}
-	getSecretReturnsOnCall map[int]struct {
+	getRepoSecretReturnsOnCall map[int]struct {
 		result1 *githuba.Secret
 		result2 *githuba.Response
 		result3 error
@@ -81,269 +81,273 @@ type FakeActionsAPI struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecret(arg1 context.Context, arg2 string, arg3 string, arg4 *githuba.EncryptedSecret) (*githuba.Response, error) {
-	fake.createOrUpdateSecretMutex.Lock()
-	ret, specificReturn := fake.createOrUpdateSecretReturnsOnCall[len(fake.createOrUpdateSecretArgsForCall)]
-	fake.createOrUpdateSecretArgsForCall = append(fake.createOrUpdateSecretArgsForCall, struct {
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecret(arg1 context.Context, arg2 string, arg3 string, arg4 *githuba.EncryptedSecret) (*githuba.Response, error) {
+	fake.createOrUpdateRepoSecretMutex.Lock()
+	ret, specificReturn := fake.createOrUpdateRepoSecretReturnsOnCall[len(fake.createOrUpdateRepoSecretArgsForCall)]
+	fake.createOrUpdateRepoSecretArgsForCall = append(fake.createOrUpdateRepoSecretArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 *githuba.EncryptedSecret
 	}{arg1, arg2, arg3, arg4})
-	fake.recordInvocation("CreateOrUpdateSecret", []interface{}{arg1, arg2, arg3, arg4})
-	fake.createOrUpdateSecretMutex.Unlock()
-	if fake.CreateOrUpdateSecretStub != nil {
-		return fake.CreateOrUpdateSecretStub(arg1, arg2, arg3, arg4)
+	stub := fake.CreateOrUpdateRepoSecretStub
+	fakeReturns := fake.createOrUpdateRepoSecretReturns
+	fake.recordInvocation("CreateOrUpdateRepoSecret", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createOrUpdateRepoSecretMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.createOrUpdateSecretReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecretCallCount() int {
-	fake.createOrUpdateSecretMutex.RLock()
-	defer fake.createOrUpdateSecretMutex.RUnlock()
-	return len(fake.createOrUpdateSecretArgsForCall)
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecretCallCount() int {
+	fake.createOrUpdateRepoSecretMutex.RLock()
+	defer fake.createOrUpdateRepoSecretMutex.RUnlock()
+	return len(fake.createOrUpdateRepoSecretArgsForCall)
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecretCalls(stub func(context.Context, string, string, *githuba.EncryptedSecret) (*githuba.Response, error)) {
-	fake.createOrUpdateSecretMutex.Lock()
-	defer fake.createOrUpdateSecretMutex.Unlock()
-	fake.CreateOrUpdateSecretStub = stub
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecretCalls(stub func(context.Context, string, string, *githuba.EncryptedSecret) (*githuba.Response, error)) {
+	fake.createOrUpdateRepoSecretMutex.Lock()
+	defer fake.createOrUpdateRepoSecretMutex.Unlock()
+	fake.CreateOrUpdateRepoSecretStub = stub
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecretArgsForCall(i int) (context.Context, string, string, *githuba.EncryptedSecret) {
-	fake.createOrUpdateSecretMutex.RLock()
-	defer fake.createOrUpdateSecretMutex.RUnlock()
-	argsForCall := fake.createOrUpdateSecretArgsForCall[i]
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecretArgsForCall(i int) (context.Context, string, string, *githuba.EncryptedSecret) {
+	fake.createOrUpdateRepoSecretMutex.RLock()
+	defer fake.createOrUpdateRepoSecretMutex.RUnlock()
+	argsForCall := fake.createOrUpdateRepoSecretArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecretReturns(result1 *githuba.Response, result2 error) {
-	fake.createOrUpdateSecretMutex.Lock()
-	defer fake.createOrUpdateSecretMutex.Unlock()
-	fake.CreateOrUpdateSecretStub = nil
-	fake.createOrUpdateSecretReturns = struct {
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecretReturns(result1 *githuba.Response, result2 error) {
+	fake.createOrUpdateRepoSecretMutex.Lock()
+	defer fake.createOrUpdateRepoSecretMutex.Unlock()
+	fake.CreateOrUpdateRepoSecretStub = nil
+	fake.createOrUpdateRepoSecretReturns = struct {
 		result1 *githuba.Response
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeActionsAPI) CreateOrUpdateSecretReturnsOnCall(i int, result1 *githuba.Response, result2 error) {
-	fake.createOrUpdateSecretMutex.Lock()
-	defer fake.createOrUpdateSecretMutex.Unlock()
-	fake.CreateOrUpdateSecretStub = nil
-	if fake.createOrUpdateSecretReturnsOnCall == nil {
-		fake.createOrUpdateSecretReturnsOnCall = make(map[int]struct {
+func (fake *FakeActionsAPI) CreateOrUpdateRepoSecretReturnsOnCall(i int, result1 *githuba.Response, result2 error) {
+	fake.createOrUpdateRepoSecretMutex.Lock()
+	defer fake.createOrUpdateRepoSecretMutex.Unlock()
+	fake.CreateOrUpdateRepoSecretStub = nil
+	if fake.createOrUpdateRepoSecretReturnsOnCall == nil {
+		fake.createOrUpdateRepoSecretReturnsOnCall = make(map[int]struct {
 			result1 *githuba.Response
 			result2 error
 		})
 	}
-	fake.createOrUpdateSecretReturnsOnCall[i] = struct {
+	fake.createOrUpdateRepoSecretReturnsOnCall[i] = struct {
 		result1 *githuba.Response
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeActionsAPI) DeleteSecret(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*githuba.Response, error) {
-	fake.deleteSecretMutex.Lock()
-	ret, specificReturn := fake.deleteSecretReturnsOnCall[len(fake.deleteSecretArgsForCall)]
-	fake.deleteSecretArgsForCall = append(fake.deleteSecretArgsForCall, struct {
+func (fake *FakeActionsAPI) DeleteRepoSecret(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*githuba.Response, error) {
+	fake.deleteRepoSecretMutex.Lock()
+	ret, specificReturn := fake.deleteRepoSecretReturnsOnCall[len(fake.deleteRepoSecretArgsForCall)]
+	fake.deleteRepoSecretArgsForCall = append(fake.deleteRepoSecretArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
-	fake.recordInvocation("DeleteSecret", []interface{}{arg1, arg2, arg3, arg4})
-	fake.deleteSecretMutex.Unlock()
-	if fake.DeleteSecretStub != nil {
-		return fake.DeleteSecretStub(arg1, arg2, arg3, arg4)
+	stub := fake.DeleteRepoSecretStub
+	fakeReturns := fake.deleteRepoSecretReturns
+	fake.recordInvocation("DeleteRepoSecret", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteRepoSecretMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.deleteSecretReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeActionsAPI) DeleteSecretCallCount() int {
-	fake.deleteSecretMutex.RLock()
-	defer fake.deleteSecretMutex.RUnlock()
-	return len(fake.deleteSecretArgsForCall)
+func (fake *FakeActionsAPI) DeleteRepoSecretCallCount() int {
+	fake.deleteRepoSecretMutex.RLock()
+	defer fake.deleteRepoSecretMutex.RUnlock()
+	return len(fake.deleteRepoSecretArgsForCall)
 }
 
-func (fake *FakeActionsAPI) DeleteSecretCalls(stub func(context.Context, string, string, string) (*githuba.Response, error)) {
-	fake.deleteSecretMutex.Lock()
-	defer fake.deleteSecretMutex.Unlock()
-	fake.DeleteSecretStub = stub
+func (fake *FakeActionsAPI) DeleteRepoSecretCalls(stub func(context.Context, string, string, string) (*githuba.Response, error)) {
+	fake.deleteRepoSecretMutex.Lock()
+	defer fake.deleteRepoSecretMutex.Unlock()
+	fake.DeleteRepoSecretStub = stub
 }
 
-func (fake *FakeActionsAPI) DeleteSecretArgsForCall(i int) (context.Context, string, string, string) {
-	fake.deleteSecretMutex.RLock()
-	defer fake.deleteSecretMutex.RUnlock()
-	argsForCall := fake.deleteSecretArgsForCall[i]
+func (fake *FakeActionsAPI) DeleteRepoSecretArgsForCall(i int) (context.Context, string, string, string) {
+	fake.deleteRepoSecretMutex.RLock()
+	defer fake.deleteRepoSecretMutex.RUnlock()
+	argsForCall := fake.deleteRepoSecretArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakeActionsAPI) DeleteSecretReturns(result1 *githuba.Response, result2 error) {
-	fake.deleteSecretMutex.Lock()
-	defer fake.deleteSecretMutex.Unlock()
-	fake.DeleteSecretStub = nil
-	fake.deleteSecretReturns = struct {
+func (fake *FakeActionsAPI) DeleteRepoSecretReturns(result1 *githuba.Response, result2 error) {
+	fake.deleteRepoSecretMutex.Lock()
+	defer fake.deleteRepoSecretMutex.Unlock()
+	fake.DeleteRepoSecretStub = nil
+	fake.deleteRepoSecretReturns = struct {
 		result1 *githuba.Response
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeActionsAPI) DeleteSecretReturnsOnCall(i int, result1 *githuba.Response, result2 error) {
-	fake.deleteSecretMutex.Lock()
-	defer fake.deleteSecretMutex.Unlock()
-	fake.DeleteSecretStub = nil
-	if fake.deleteSecretReturnsOnCall == nil {
-		fake.deleteSecretReturnsOnCall = make(map[int]struct {
+func (fake *FakeActionsAPI) DeleteRepoSecretReturnsOnCall(i int, result1 *githuba.Response, result2 error) {
+	fake.deleteRepoSecretMutex.Lock()
+	defer fake.deleteRepoSecretMutex.Unlock()
+	fake.DeleteRepoSecretStub = nil
+	if fake.deleteRepoSecretReturnsOnCall == nil {
+		fake.deleteRepoSecretReturnsOnCall = make(map[int]struct {
 			result1 *githuba.Response
 			result2 error
 		})
 	}
-	fake.deleteSecretReturnsOnCall[i] = struct {
+	fake.deleteRepoSecretReturnsOnCall[i] = struct {
 		result1 *githuba.Response
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeActionsAPI) GetPublicKey(arg1 context.Context, arg2 string, arg3 string) (*githuba.PublicKey, *githuba.Response, error) {
-	fake.getPublicKeyMutex.Lock()
-	ret, specificReturn := fake.getPublicKeyReturnsOnCall[len(fake.getPublicKeyArgsForCall)]
-	fake.getPublicKeyArgsForCall = append(fake.getPublicKeyArgsForCall, struct {
+func (fake *FakeActionsAPI) GetRepoPublicKey(arg1 context.Context, arg2 string, arg3 string) (*githuba.PublicKey, *githuba.Response, error) {
+	fake.getRepoPublicKeyMutex.Lock()
+	ret, specificReturn := fake.getRepoPublicKeyReturnsOnCall[len(fake.getRepoPublicKeyArgsForCall)]
+	fake.getRepoPublicKeyArgsForCall = append(fake.getRepoPublicKeyArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 	}{arg1, arg2, arg3})
-	fake.recordInvocation("GetPublicKey", []interface{}{arg1, arg2, arg3})
-	fake.getPublicKeyMutex.Unlock()
-	if fake.GetPublicKeyStub != nil {
-		return fake.GetPublicKeyStub(arg1, arg2, arg3)
+	stub := fake.GetRepoPublicKeyStub
+	fakeReturns := fake.getRepoPublicKeyReturns
+	fake.recordInvocation("GetRepoPublicKey", []interface{}{arg1, arg2, arg3})
+	fake.getRepoPublicKeyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.getPublicKeyReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
-func (fake *FakeActionsAPI) GetPublicKeyCallCount() int {
-	fake.getPublicKeyMutex.RLock()
-	defer fake.getPublicKeyMutex.RUnlock()
-	return len(fake.getPublicKeyArgsForCall)
+func (fake *FakeActionsAPI) GetRepoPublicKeyCallCount() int {
+	fake.getRepoPublicKeyMutex.RLock()
+	defer fake.getRepoPublicKeyMutex.RUnlock()
+	return len(fake.getRepoPublicKeyArgsForCall)
 }
 
-func (fake *FakeActionsAPI) GetPublicKeyCalls(stub func(context.Context, string, string) (*githuba.PublicKey, *githuba.Response, error)) {
-	fake.getPublicKeyMutex.Lock()
-	defer fake.getPublicKeyMutex.Unlock()
-	fake.GetPublicKeyStub = stub
+func (fake *FakeActionsAPI) GetRepoPublicKeyCalls(stub func(context.Context, string, string) (*githuba.PublicKey, *githuba.Response, error)) {
+	fake.getRepoPublicKeyMutex.Lock()
+	defer fake.getRepoPublicKeyMutex.Unlock()
+	fake.GetRepoPublicKeyStub = stub
 }
 
-func (fake *FakeActionsAPI) GetPublicKeyArgsForCall(i int) (context.Context, string, string) {
-	fake.getPublicKeyMutex.RLock()
-	defer fake.getPublicKeyMutex.RUnlock()
-	argsForCall := fake.getPublicKeyArgsForCall[i]
+func (fake *FakeActionsAPI) GetRepoPublicKeyArgsForCall(i int) (context.Context, string, string) {
+	fake.getRepoPublicKeyMutex.RLock()
+	defer fake.getRepoPublicKeyMutex.RUnlock()
+	argsForCall := fake.getRepoPublicKeyArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeActionsAPI) GetPublicKeyReturns(result1 *githuba.PublicKey, result2 *githuba.Response, result3 error) {
-	fake.getPublicKeyMutex.Lock()
-	defer fake.getPublicKeyMutex.Unlock()
-	fake.GetPublicKeyStub = nil
-	fake.getPublicKeyReturns = struct {
+func (fake *FakeActionsAPI) GetRepoPublicKeyReturns(result1 *githuba.PublicKey, result2 *githuba.Response, result3 error) {
+	fake.getRepoPublicKeyMutex.Lock()
+	defer fake.getRepoPublicKeyMutex.Unlock()
+	fake.GetRepoPublicKeyStub = nil
+	fake.getRepoPublicKeyReturns = struct {
 		result1 *githuba.PublicKey
 		result2 *githuba.Response
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakeActionsAPI) GetPublicKeyReturnsOnCall(i int, result1 *githuba.PublicKey, result2 *githuba.Response, result3 error) {
-	fake.getPublicKeyMutex.Lock()
-	defer fake.getPublicKeyMutex.Unlock()
-	fake.GetPublicKeyStub = nil
-	if fake.getPublicKeyReturnsOnCall == nil {
-		fake.getPublicKeyReturnsOnCall = make(map[int]struct {
+func (fake *FakeActionsAPI) GetRepoPublicKeyReturnsOnCall(i int, result1 *githuba.PublicKey, result2 *githuba.Response, result3 error) {
+	fake.getRepoPublicKeyMutex.Lock()
+	defer fake.getRepoPublicKeyMutex.Unlock()
+	fake.GetRepoPublicKeyStub = nil
+	if fake.getRepoPublicKeyReturnsOnCall == nil {
+		fake.getRepoPublicKeyReturnsOnCall = make(map[int]struct {
 			result1 *githuba.PublicKey
 			result2 *githuba.Response
 			result3 error
 		})
 	}
-	fake.getPublicKeyReturnsOnCall[i] = struct {
+	fake.getRepoPublicKeyReturnsOnCall[i] = struct {
 		result1 *githuba.PublicKey
 		result2 *githuba.Response
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakeActionsAPI) GetSecret(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*githuba.Secret, *githuba.Response, error) {
-	fake.getSecretMutex.Lock()
-	ret, specificReturn := fake.getSecretReturnsOnCall[len(fake.getSecretArgsForCall)]
-	fake.getSecretArgsForCall = append(fake.getSecretArgsForCall, struct {
+func (fake *FakeActionsAPI) GetRepoSecret(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*githuba.Secret, *githuba.Response, error) {
+	fake.getRepoSecretMutex.Lock()
+	ret, specificReturn := fake.getRepoSecretReturnsOnCall[len(fake.getRepoSecretArgsForCall)]
+	fake.getRepoSecretArgsForCall = append(fake.getRepoSecretArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
-	fake.recordInvocation("GetSecret", []interface{}{arg1, arg2, arg3, arg4})
-	fake.getSecretMutex.Unlock()
-	if fake.GetSecretStub != nil {
-		return fake.GetSecretStub(arg1, arg2, arg3, arg4)
+	stub := fake.GetRepoSecretStub
+	fakeReturns := fake.getRepoSecretReturns
+	fake.recordInvocation("GetRepoSecret", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getRepoSecretMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.getSecretReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
-func (fake *FakeActionsAPI) GetSecretCallCount() int {
-	fake.getSecretMutex.RLock()
-	defer fake.getSecretMutex.RUnlock()
-	return len(fake.getSecretArgsForCall)
+func (fake *FakeActionsAPI) GetRepoSecretCallCount() int {
+	fake.getRepoSecretMutex.RLock()
+	defer fake.getRepoSecretMutex.RUnlock()
+	return len(fake.getRepoSecretArgsForCall)
 }
 
-func (fake *FakeActionsAPI) GetSecretCalls(stub func(context.Context, string, string, string) (*githuba.Secret, *githuba.Response, error)) {
-	fake.getSecretMutex.Lock()
-	defer fake.getSecretMutex.Unlock()
-	fake.GetSecretStub = stub
+func (fake *FakeActionsAPI) GetRepoSecretCalls(stub func(context.Context, string, string, string) (*githuba.Secret, *githuba.Response, error)) {
+	fake.getRepoSecretMutex.Lock()
+	defer fake.getRepoSecretMutex.Unlock()
+	fake.GetRepoSecretStub = stub
 }
 
-func (fake *FakeActionsAPI) GetSecretArgsForCall(i int) (context.Context, string, string, string) {
-	fake.getSecretMutex.RLock()
-	defer fake.getSecretMutex.RUnlock()
-	argsForCall := fake.getSecretArgsForCall[i]
+func (fake *FakeActionsAPI) GetRepoSecretArgsForCall(i int) (context.Context, string, string, string) {
+	fake.getRepoSecretMutex.RLock()
+	defer fake.getRepoSecretMutex.RUnlock()
+	argsForCall := fake.getRepoSecretArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakeActionsAPI) GetSecretReturns(result1 *githuba.Secret, result2 *githuba.Response, result3 error) {
-	fake.getSecretMutex.Lock()
-	defer fake.getSecretMutex.Unlock()
-	fake.GetSecretStub = nil
-	fake.getSecretReturns = struct {
+func (fake *FakeActionsAPI) GetRepoSecretReturns(result1 *githuba.Secret, result2 *githuba.Response, result3 error) {
+	fake.getRepoSecretMutex.Lock()
+	defer fake.getRepoSecretMutex.Unlock()
+	fake.GetRepoSecretStub = nil
+	fake.getRepoSecretReturns = struct {
 		result1 *githuba.Secret
 		result2 *githuba.Response
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakeActionsAPI) GetSecretReturnsOnCall(i int, result1 *githuba.Secret, result2 *githuba.Response, result3 error) {
-	fake.getSecretMutex.Lock()
-	defer fake.getSecretMutex.Unlock()
-	fake.GetSecretStub = nil
-	if fake.getSecretReturnsOnCall == nil {
-		fake.getSecretReturnsOnCall = make(map[int]struct {
+func (fake *FakeActionsAPI) GetRepoSecretReturnsOnCall(i int, result1 *githuba.Secret, result2 *githuba.Response, result3 error) {
+	fake.getRepoSecretMutex.Lock()
+	defer fake.getRepoSecretMutex.Unlock()
+	fake.GetRepoSecretStub = nil
+	if fake.getRepoSecretReturnsOnCall == nil {
+		fake.getRepoSecretReturnsOnCall = make(map[int]struct {
 			result1 *githuba.Secret
 			result2 *githuba.Response
 			result3 error
 		})
 	}
-	fake.getSecretReturnsOnCall[i] = struct {
+	fake.getRepoSecretReturnsOnCall[i] = struct {
 		result1 *githuba.Secret
 		result2 *githuba.Response
 		result3 error
@@ -353,14 +357,14 @@ func (fake *FakeActionsAPI) GetSecretReturnsOnCall(i int, result1 *githuba.Secre
 func (fake *FakeActionsAPI) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.createOrUpdateSecretMutex.RLock()
-	defer fake.createOrUpdateSecretMutex.RUnlock()
-	fake.deleteSecretMutex.RLock()
-	defer fake.deleteSecretMutex.RUnlock()
-	fake.getPublicKeyMutex.RLock()
-	defer fake.getPublicKeyMutex.RUnlock()
-	fake.getSecretMutex.RLock()
-	defer fake.getSecretMutex.RUnlock()
+	fake.createOrUpdateRepoSecretMutex.RLock()
+	defer fake.createOrUpdateRepoSecretMutex.RUnlock()
+	fake.deleteRepoSecretMutex.RLock()
+	defer fake.deleteRepoSecretMutex.RUnlock()
+	fake.getRepoPublicKeyMutex.RLock()
+	defer fake.getRepoPublicKeyMutex.RUnlock()
+	fake.getRepoSecretMutex.RLock()
+	defer fake.getRepoSecretMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

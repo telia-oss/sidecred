@@ -9,17 +9,15 @@ require (
 	github.com/aws/aws-lambda-go v1.13.3
 	github.com/aws/aws-sdk-go v1.28.7
 	github.com/frankban/quicktest v1.10.0 // indirect
-	github.com/google/go-github/v29 v29.0.3
+	github.com/google/go-github/v41 v41.0.0
 	github.com/jfrog/jfrog-client-go v0.7.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.3
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/stretchr/testify v1.4.0
 	github.com/telia-oss/aws-env v1.0.2
-	github.com/telia-oss/githubapp v0.5.0
+	github.com/telia-oss/githubapp v0.6.0
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
-	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	sigs.k8s.io/yaml v1.1.0
 )

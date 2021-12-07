@@ -45,15 +45,16 @@ func (fake *FakeS3API) GetObject(arg1 *s3a.GetObjectInput) (*s3a.GetObjectOutput
 	fake.getObjectArgsForCall = append(fake.getObjectArgsForCall, struct {
 		arg1 *s3a.GetObjectInput
 	}{arg1})
+	stub := fake.GetObjectStub
+	fakeReturns := fake.getObjectReturns
 	fake.recordInvocation("GetObject", []interface{}{arg1})
 	fake.getObjectMutex.Unlock()
-	if fake.GetObjectStub != nil {
-		return fake.GetObjectStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getObjectReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -108,15 +109,16 @@ func (fake *FakeS3API) PutObject(arg1 *s3a.PutObjectInput) (*s3a.PutObjectOutput
 	fake.putObjectArgsForCall = append(fake.putObjectArgsForCall, struct {
 		arg1 *s3a.PutObjectInput
 	}{arg1})
+	stub := fake.PutObjectStub
+	fakeReturns := fake.putObjectReturns
 	fake.recordInvocation("PutObject", []interface{}{arg1})
 	fake.putObjectMutex.Unlock()
-	if fake.PutObjectStub != nil {
-		return fake.PutObjectStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.putObjectReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

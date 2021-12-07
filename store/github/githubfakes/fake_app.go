@@ -41,15 +41,16 @@ func (fake *FakeApp) CreateInstallationToken(arg1 string, arg2 []string, arg3 *g
 		arg2 []string
 		arg3 *githubapp.Permissions
 	}{arg1, arg2Copy, arg3})
+	stub := fake.CreateInstallationTokenStub
+	fakeReturns := fake.createInstallationTokenReturns
 	fake.recordInvocation("CreateInstallationToken", []interface{}{arg1, arg2Copy, arg3})
 	fake.createInstallationTokenMutex.Unlock()
-	if fake.CreateInstallationTokenStub != nil {
-		return fake.CreateInstallationTokenStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.createInstallationTokenReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

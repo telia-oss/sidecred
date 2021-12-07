@@ -1,6 +1,7 @@
 // Package secretsmanager implements sidecred.SecretStore on top of AWS Secrets Manager.
 package secretsmanager
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"encoding/json"
 	"fmt"
@@ -144,7 +145,7 @@ func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
 }
 
 // SecretsManagerAPI wraps the interface for the API and provides a mocked implementation.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . SecretsManagerAPI
+//counterfeiter:generate . SecretsManagerAPI
 type SecretsManagerAPI interface {
 	CreateSecret(input *secretsmanager.CreateSecretInput) (*secretsmanager.CreateSecretOutput, error)
 	UpdateSecret(input *secretsmanager.UpdateSecretInput) (*secretsmanager.UpdateSecretOutput, error)

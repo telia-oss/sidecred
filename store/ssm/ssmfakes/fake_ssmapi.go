@@ -58,15 +58,16 @@ func (fake *FakeSSMAPI) DeleteParameter(arg1 *ssma.DeleteParameterInput) (*ssma.
 	fake.deleteParameterArgsForCall = append(fake.deleteParameterArgsForCall, struct {
 		arg1 *ssma.DeleteParameterInput
 	}{arg1})
+	stub := fake.DeleteParameterStub
+	fakeReturns := fake.deleteParameterReturns
 	fake.recordInvocation("DeleteParameter", []interface{}{arg1})
 	fake.deleteParameterMutex.Unlock()
-	if fake.DeleteParameterStub != nil {
-		return fake.DeleteParameterStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.deleteParameterReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -121,15 +122,16 @@ func (fake *FakeSSMAPI) GetParameter(arg1 *ssma.GetParameterInput) (*ssma.GetPar
 	fake.getParameterArgsForCall = append(fake.getParameterArgsForCall, struct {
 		arg1 *ssma.GetParameterInput
 	}{arg1})
+	stub := fake.GetParameterStub
+	fakeReturns := fake.getParameterReturns
 	fake.recordInvocation("GetParameter", []interface{}{arg1})
 	fake.getParameterMutex.Unlock()
-	if fake.GetParameterStub != nil {
-		return fake.GetParameterStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getParameterReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -184,15 +186,16 @@ func (fake *FakeSSMAPI) PutParameter(arg1 *ssma.PutParameterInput) (*ssma.PutPar
 	fake.putParameterArgsForCall = append(fake.putParameterArgsForCall, struct {
 		arg1 *ssma.PutParameterInput
 	}{arg1})
+	stub := fake.PutParameterStub
+	fakeReturns := fake.putParameterReturns
 	fake.recordInvocation("PutParameter", []interface{}{arg1})
 	fake.putParameterMutex.Unlock()
-	if fake.PutParameterStub != nil {
-		return fake.PutParameterStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.putParameterReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

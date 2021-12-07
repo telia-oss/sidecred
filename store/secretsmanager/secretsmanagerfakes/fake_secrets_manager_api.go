@@ -71,15 +71,16 @@ func (fake *FakeSecretsManagerAPI) CreateSecret(arg1 *secretsmanagera.CreateSecr
 	fake.createSecretArgsForCall = append(fake.createSecretArgsForCall, struct {
 		arg1 *secretsmanagera.CreateSecretInput
 	}{arg1})
+	stub := fake.CreateSecretStub
+	fakeReturns := fake.createSecretReturns
 	fake.recordInvocation("CreateSecret", []interface{}{arg1})
 	fake.createSecretMutex.Unlock()
-	if fake.CreateSecretStub != nil {
-		return fake.CreateSecretStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.createSecretReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -134,15 +135,16 @@ func (fake *FakeSecretsManagerAPI) DeleteSecret(arg1 *secretsmanagera.DeleteSecr
 	fake.deleteSecretArgsForCall = append(fake.deleteSecretArgsForCall, struct {
 		arg1 *secretsmanagera.DeleteSecretInput
 	}{arg1})
+	stub := fake.DeleteSecretStub
+	fakeReturns := fake.deleteSecretReturns
 	fake.recordInvocation("DeleteSecret", []interface{}{arg1})
 	fake.deleteSecretMutex.Unlock()
-	if fake.DeleteSecretStub != nil {
-		return fake.DeleteSecretStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.deleteSecretReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -197,15 +199,16 @@ func (fake *FakeSecretsManagerAPI) GetSecretValue(arg1 *secretsmanagera.GetSecre
 	fake.getSecretValueArgsForCall = append(fake.getSecretValueArgsForCall, struct {
 		arg1 *secretsmanagera.GetSecretValueInput
 	}{arg1})
+	stub := fake.GetSecretValueStub
+	fakeReturns := fake.getSecretValueReturns
 	fake.recordInvocation("GetSecretValue", []interface{}{arg1})
 	fake.getSecretValueMutex.Unlock()
-	if fake.GetSecretValueStub != nil {
-		return fake.GetSecretValueStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getSecretValueReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -260,15 +263,16 @@ func (fake *FakeSecretsManagerAPI) UpdateSecret(arg1 *secretsmanagera.UpdateSecr
 	fake.updateSecretArgsForCall = append(fake.updateSecretArgsForCall, struct {
 		arg1 *secretsmanagera.UpdateSecretInput
 	}{arg1})
+	stub := fake.UpdateSecretStub
+	fakeReturns := fake.updateSecretReturns
 	fake.recordInvocation("UpdateSecret", []interface{}{arg1})
 	fake.updateSecretMutex.Unlock()
-	if fake.UpdateSecretStub != nil {
-		return fake.UpdateSecretStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.updateSecretReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

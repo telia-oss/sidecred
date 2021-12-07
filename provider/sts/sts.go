@@ -1,6 +1,7 @@
 // Package sts implements a sidecred.Provider for AWS STS Credentials.
 package sts
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"fmt"
 	"time"
@@ -127,7 +128,7 @@ func (p *provider) Destroy(_ *sidecred.Resource) error {
 }
 
 // STSAPI wraps the interface for the API and provides a mocked implementation.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . STSAPI
+//counterfeiter:generate . STSAPI
 type STSAPI interface {
 	AssumeRole(input *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error)
 }

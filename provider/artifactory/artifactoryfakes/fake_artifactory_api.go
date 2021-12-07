@@ -32,15 +32,16 @@ func (fake *FakeArtifactoryAPI) CreateToken(arg1 services.CreateTokenParams) (se
 	fake.createTokenArgsForCall = append(fake.createTokenArgsForCall, struct {
 		arg1 services.CreateTokenParams
 	}{arg1})
+	stub := fake.CreateTokenStub
+	fakeReturns := fake.createTokenReturns
 	fake.recordInvocation("CreateToken", []interface{}{arg1})
 	fake.createTokenMutex.Unlock()
-	if fake.CreateTokenStub != nil {
-		return fake.CreateTokenStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.createTokenReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
