@@ -9,7 +9,7 @@ import (
 	provider "github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/github/githubfakes"
 
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

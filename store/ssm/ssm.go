@@ -1,6 +1,7 @@
 // Package ssm implements sidecred.SecretStore on top of AWS Parameter store.
 package ssm
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"encoding/json"
 	"fmt"
@@ -143,7 +144,7 @@ func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
 }
 
 // SSMAPI wraps the interface for the API and provides a mocked implementation.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . SSMAPI
+//counterfeiter:generate . SSMAPI
 type SSMAPI interface {
 	PutParameter(input *ssm.PutParameterInput) (*ssm.PutParameterOutput, error)
 	GetParameter(input *ssm.GetParameterInput) (*ssm.GetParameterOutput, error)

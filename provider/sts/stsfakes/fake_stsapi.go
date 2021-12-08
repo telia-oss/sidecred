@@ -32,15 +32,16 @@ func (fake *FakeSTSAPI) AssumeRole(arg1 *stsa.AssumeRoleInput) (*stsa.AssumeRole
 	fake.assumeRoleArgsForCall = append(fake.assumeRoleArgsForCall, struct {
 		arg1 *stsa.AssumeRoleInput
 	}{arg1})
+	stub := fake.AssumeRoleStub
+	fakeReturns := fake.assumeRoleReturns
 	fake.recordInvocation("AssumeRole", []interface{}{arg1})
 	fake.assumeRoleMutex.Unlock()
-	if fake.AssumeRoleStub != nil {
-		return fake.AssumeRoleStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.assumeRoleReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

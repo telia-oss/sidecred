@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	githuba "github.com/google/go-github/v29/github"
+	githuba "github.com/google/go-github/v41/github"
 	"github.com/telia-oss/sidecred/provider/github"
 )
 
@@ -75,15 +75,16 @@ func (fake *FakeRepositoriesAPI) CreateKey(arg1 context.Context, arg2 string, ar
 		arg3 string
 		arg4 *githuba.Key
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateKeyStub
+	fakeReturns := fake.createKeyReturns
 	fake.recordInvocation("CreateKey", []interface{}{arg1, arg2, arg3, arg4})
 	fake.createKeyMutex.Unlock()
-	if fake.CreateKeyStub != nil {
-		return fake.CreateKeyStub(arg1, arg2, arg3, arg4)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.createKeyReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
@@ -144,15 +145,16 @@ func (fake *FakeRepositoriesAPI) DeleteKey(arg1 context.Context, arg2 string, ar
 		arg3 string
 		arg4 int64
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteKeyStub
+	fakeReturns := fake.deleteKeyReturns
 	fake.recordInvocation("DeleteKey", []interface{}{arg1, arg2, arg3, arg4})
 	fake.deleteKeyMutex.Unlock()
-	if fake.DeleteKeyStub != nil {
-		return fake.DeleteKeyStub(arg1, arg2, arg3, arg4)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.deleteKeyReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -210,15 +212,16 @@ func (fake *FakeRepositoriesAPI) ListKeys(arg1 context.Context, arg2 string, arg
 		arg3 string
 		arg4 *githuba.ListOptions
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.ListKeysStub
+	fakeReturns := fake.listKeysReturns
 	fake.recordInvocation("ListKeys", []interface{}{arg1, arg2, arg3, arg4})
 	fake.listKeysMutex.Unlock()
-	if fake.ListKeysStub != nil {
-		return fake.ListKeysStub(arg1, arg2, arg3, arg4)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.listKeysReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 

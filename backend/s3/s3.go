@@ -1,6 +1,7 @@
 // Package s3 implements a sidecred.StateBackend using AWS S3.
 package s3
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"bytes"
 	"encoding/json"
@@ -76,7 +77,7 @@ func (b *backend) Save(key string, state *sidecred.State) error {
 }
 
 // S3API wraps the interface for the API and provides a mocked implementation.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . S3API
+//counterfeiter:generate . S3API
 type S3API interface {
 	GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error)
 	PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error)

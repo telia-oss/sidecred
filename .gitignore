@@ -1,2 +1,4 @@
 # Build artifacts
 dist/
+# Goland IDE
+.idea/

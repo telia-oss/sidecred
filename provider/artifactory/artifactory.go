@@ -20,6 +20,7 @@
 // the API key, which have a higher blast radius if leaked.
 package artifactory
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"fmt"
 	"os"
@@ -177,7 +178,7 @@ func (p *provider) Destroy(_ *sidecred.Resource) error {
 }
 
 // ArtifactoryAPI wraps the Artifactory access token API.
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ArtifactoryAPI
+//counterfeiter:generate . ArtifactoryAPI
 type ArtifactoryAPI interface {
 	CreateToken(services.CreateTokenParams) (services.CreateTokenResponseData, error)
 }

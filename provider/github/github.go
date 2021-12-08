@@ -2,6 +2,7 @@
 // a client for Github Apps, which is used to create the supported credentials.
 package github
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"context"
 	"crypto/rand"
@@ -15,7 +16,7 @@ import (
 
 	"github.com/telia-oss/sidecred"
 
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v41/github"
 	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/ssh"
 )
@@ -235,14 +236,14 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 
 // App is the interface that needs to be satisfied by the Github App implementation.
 //
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . App
+//counterfeiter:generate . App
 type App interface {
 	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
 }
 
 // RepositoriesAPI wraps the Github repositories API.
 //
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . RepositoriesAPI
+//counterfeiter:generate . RepositoriesAPI
 type RepositoriesAPI interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)

@@ -1,6 +1,7 @@
 // Package github implements a sidecred.SecretStore on top of Github secrets.
 package github
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"context"
 	"encoding/base64"
@@ -12,7 +13,7 @@ import (
 	"github.com/telia-oss/githubapp"
 	"github.com/telia-oss/sidecred"
 
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v41/github"
 	"golang.org/x/crypto/nacl/box"
 )
 
@@ -74,11 +75,11 @@ func (s *store) Type() sidecred.StoreType {
 func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return "", fmt.Errorf("parse config: %s", err)
+		return "", fmt.Errorf("parse config: %w", err)
 	}
 	path, err := sidecred.BuildSecretTemplate(c.SecretTemplate, namespace, secret.Name)
 	if err != nil {
-		return "", fmt.Errorf("build secret path: %s", err)
+		return "", fmt.Errorf("build secret path: %w", err)
 	}
 	// TODO: Scope token to "secrets" once go-github supports it:
 	// https://developer.github.com/v3/apps/permissions/#permission-on-secrets
@@ -87,35 +88,35 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	// https://github.com/google/go-github/blob/v32.1.0/github/apps.go#L60
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return "", fmt.Errorf("create secrets access token: %s", err)
+		return "", fmt.Errorf("create secrets access token: %w", err)
 	}
 
 	if _, found := s.keys[c.RepositorySlug]; !found {
-		key, _, err := s.actionsClientFactory(token.GetToken()).GetPublicKey(context.TODO(), c.owner, c.repository)
+		key, _, err := s.actionsClientFactory(token.GetToken()).GetRepoPublicKey(context.TODO(), c.owner, c.repository)
 		if err != nil {
-			return "", fmt.Errorf("get public key: %s", err)
+			return "", fmt.Errorf("get public key: %w", err)
 		}
 		s.keys[c.RepositorySlug] = key
 	}
-	publicKey, _ := s.keys[c.RepositorySlug]
+	publicKey := s.keys[c.RepositorySlug]
 
 	encryptedSecret, err := s.encryptSecretValue(secret, publicKey)
 	if err != nil {
-		return "", fmt.Errorf("encrypt secret: %s", err)
+		return "", fmt.Errorf("encrypt secret: %w", err)
 	}
 
 	path, err = s.sanitizeSecretPath(path)
 	if err != nil {
-		return "", fmt.Errorf("sanitize path: %s", err)
+		return "", fmt.Errorf("sanitize path: %w", err)
 	}
 
-	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateSecret(context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
+	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
 		Name:           path,
 		KeyID:          publicKey.GetKeyID(),
 		EncryptedValue: encryptedSecret,
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
 	}
 
 	return path, nil
@@ -127,15 +128,15 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 func (s *store) Read(path string, config json.RawMessage) (string, bool, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return "", false, fmt.Errorf("parse config: %s", err)
+		return "", false, fmt.Errorf("parse config: %w", err)
 	}
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return "", false, fmt.Errorf("create secrets access token: %s", err)
+		return "", false, fmt.Errorf("create secrets access token: %w", err)
 	}
-	secret, _, err := s.actionsClientFactory(token.GetToken()).GetSecret(context.TODO(), c.owner, c.repository, path)
+	secret, _, err := s.actionsClientFactory(token.GetToken()).GetRepoSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
-		return "", false, fmt.Errorf("get secret: %s", err)
+		return "", false, fmt.Errorf("get secret: %w", err)
 	}
 	return secret.Name, true, nil
 }
@@ -144,17 +145,17 @@ func (s *store) Read(path string, config json.RawMessage) (string, bool, error) 
 func (s *store) Delete(path string, config json.RawMessage) error {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return fmt.Errorf("parse config: %s", err)
+		return fmt.Errorf("parse config: %w", err)
 	}
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return fmt.Errorf("create secrets access token: %s", err)
+		return fmt.Errorf("create secrets access token: %w", err)
 	}
-	resp, err := s.actionsClientFactory(token.GetToken()).DeleteSecret(context.TODO(), c.owner, c.repository, path)
+	resp, err := s.actionsClientFactory(token.GetToken()).DeleteRepoSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
 		if resp == nil || resp.StatusCode != 404 {
-			return fmt.Errorf("delete secret: %s", err)
+			return fmt.Errorf("delete secret: %w", err)
 		}
 	}
 	return nil
@@ -184,7 +185,7 @@ func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
 func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *github.PublicKey) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(publicKey.GetKey())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("base64.StdEncoding.DecodeString was unable to decode public key: %w", err)
 	}
 
 	var key [32]byte
@@ -193,7 +194,7 @@ func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *githu
 	var out []byte
 	encrypted, err := box.SealAnonymous(out, []byte(secret.Value), &key, nil)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("unable to encrypt with key: %w", err)
 	}
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
@@ -211,17 +212,17 @@ func (s *store) sanitizeSecretPath(path string) (string, error) {
 
 // App is the interface that needs to be satisfied by the Github App implementation.
 //
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . App
+//counterfeiter:generate . App
 type App interface {
 	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
 }
 
 // ActionsAPI wraps the Github actions API.
 //
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ActionsAPI
+//counterfeiter:generate . ActionsAPI
 type ActionsAPI interface {
-	GetPublicKey(ctx context.Context, owner, repo string) (*github.PublicKey, *github.Response, error)
-	CreateOrUpdateSecret(ctx context.Context, owner, repo string, eSecret *github.EncryptedSecret) (*github.Response, error)
-	GetSecret(ctx context.Context, owner, repo, name string) (*github.Secret, *github.Response, error)
-	DeleteSecret(ctx context.Context, owner, repo, name string) (*github.Response, error)
+	GetRepoPublicKey(ctx context.Context, owner, repo string) (*github.PublicKey, *github.Response, error)
+	CreateOrUpdateRepoSecret(ctx context.Context, owner, repo string, eSecret *github.EncryptedSecret) (*github.Response, error)
+	GetRepoSecret(ctx context.Context, owner, repo, name string) (*github.Secret, *github.Response, error)
+	DeleteRepoSecret(ctx context.Context, owner, repo, name string) (*github.Response, error)
 }
