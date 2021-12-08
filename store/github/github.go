@@ -75,11 +75,11 @@ func (s *store) Type() sidecred.StoreType {
 func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return "", fmt.Errorf("parse config: %s", err)
+		return "", fmt.Errorf("parse config: %w", err)
 	}
 	path, err := sidecred.BuildSecretTemplate(c.SecretTemplate, namespace, secret.Name)
 	if err != nil {
-		return "", fmt.Errorf("build secret path: %s", err)
+		return "", fmt.Errorf("build secret path: %w", err)
 	}
 	// TODO: Scope token to "secrets" once go-github supports it:
 	// https://developer.github.com/v3/apps/permissions/#permission-on-secrets
@@ -88,26 +88,26 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	// https://github.com/google/go-github/blob/v32.1.0/github/apps.go#L60
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return "", fmt.Errorf("create secrets access token: %s", err)
+		return "", fmt.Errorf("create secrets access token: %w", err)
 	}
 
 	if _, found := s.keys[c.RepositorySlug]; !found {
 		key, _, err := s.actionsClientFactory(token.GetToken()).GetRepoPublicKey(context.TODO(), c.owner, c.repository)
 		if err != nil {
-			return "", fmt.Errorf("get public key: %s", err)
+			return "", fmt.Errorf("get public key: %w", err)
 		}
 		s.keys[c.RepositorySlug] = key
 	}
-	publicKey, _ := s.keys[c.RepositorySlug]
+	publicKey := s.keys[c.RepositorySlug]
 
 	encryptedSecret, err := s.encryptSecretValue(secret, publicKey)
 	if err != nil {
-		return "", fmt.Errorf("encrypt secret: %s", err)
+		return "", fmt.Errorf("encrypt secret: %w", err)
 	}
 
 	path, err = s.sanitizeSecretPath(path)
 	if err != nil {
-		return "", fmt.Errorf("sanitize path: %s", err)
+		return "", fmt.Errorf("sanitize path: %w", err)
 	}
 
 	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
@@ -116,7 +116,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 		EncryptedValue: encryptedSecret,
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
 	}
 
 	return path, nil
@@ -128,15 +128,15 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 func (s *store) Read(path string, config json.RawMessage) (string, bool, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return "", false, fmt.Errorf("parse config: %s", err)
+		return "", false, fmt.Errorf("parse config: %w", err)
 	}
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return "", false, fmt.Errorf("create secrets access token: %s", err)
+		return "", false, fmt.Errorf("create secrets access token: %w", err)
 	}
 	secret, _, err := s.actionsClientFactory(token.GetToken()).GetRepoSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
-		return "", false, fmt.Errorf("get secret: %s", err)
+		return "", false, fmt.Errorf("get secret: %w", err)
 	}
 	return secret.Name, true, nil
 }
@@ -145,17 +145,17 @@ func (s *store) Read(path string, config json.RawMessage) (string, bool, error) 
 func (s *store) Delete(path string, config json.RawMessage) error {
 	c, err := s.parseConfig(config)
 	if err != nil {
-		return fmt.Errorf("parse config: %s", err)
+		return fmt.Errorf("parse config: %w", err)
 	}
 	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
 	if err != nil {
-		return fmt.Errorf("create secrets access token: %s", err)
+		return fmt.Errorf("create secrets access token: %w", err)
 	}
 	resp, err := s.actionsClientFactory(token.GetToken()).DeleteRepoSecret(context.TODO(), c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
 		if resp == nil || resp.StatusCode != 404 {
-			return fmt.Errorf("delete secret: %s", err)
+			return fmt.Errorf("delete secret: %w", err)
 		}
 	}
 	return nil
@@ -185,7 +185,7 @@ func (s *store) parseConfig(raw json.RawMessage) (*config, error) {
 func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *github.PublicKey) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(publicKey.GetKey())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("base64.StdEncoding.DecodeString was unable to decode public key: %w", err)
 	}
 
 	var key [32]byte
@@ -194,7 +194,7 @@ func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *githu
 	var out []byte
 	encrypted, err := box.SealAnonymous(out, []byte(secret.Value), &key, nil)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("unable to encrypt with key: %w", err)
 	}
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }

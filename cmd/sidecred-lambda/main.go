@@ -62,7 +62,12 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 			if err != nil {
 				return fmt.Errorf("failed to load state: %s", err)
 			}
-			defer backend.Save(event.StatePath, state)
+			defer func(backend sidecred.StateBackend, path string, state *sidecred.State) {
+				err := backend.Save(path, state)
+				if err != nil {
+					fmt.Printf("backend save error on path %s: error %s", path, err)
+				}
+			}(backend, event.StatePath, state)
 			return s.Process(cfg, state)
 		})
 		return nil
