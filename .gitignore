@@ -2,3 +2,7 @@
 dist/
 # Goland IDE
 .idea/
+# Direnv config
+.envrc
+# ignore the default state file from test runs
+state.json

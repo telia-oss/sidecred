@@ -320,10 +320,6 @@ func (s *Sidecred) Process(config Config, state *State) error {
 	log := s.logger.With(zap.String("namespace", config.Namespace()))
 	log.Info("starting sidecred", zap.Int("requests", len(config.Requests())))
 
-	if err := config.Validate(); err != nil {
-		return fmt.Errorf("invalid config: %s", err)
-	}
-
 RequestLoop:
 	for _, request := range config.Requests() {
 		var storeConfig *StoreConfig

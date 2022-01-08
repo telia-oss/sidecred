@@ -58,6 +58,9 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 			if err != nil {
 				return fmt.Errorf("failed to load config: %s", err)
 			}
+			if err := cfg.Validate(); err != nil {
+				return fmt.Errorf("failed to validate config: %s", err)
+			}
 			state, err := backend.Load(event.StatePath)
 			if err != nil {
 				return fmt.Errorf("failed to load state: %s", err)

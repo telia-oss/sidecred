@@ -162,7 +162,7 @@ func (c *credentialRequest) validate() error {
 	}
 	for i, r := range c.List {
 		if r.Type != "" {
-			return fmt.Errorf("list entry[%d]: request should not include %q", i, "type")
+			return fmt.Errorf("list entry[%d] name %q: request should not include %q value %q", i, r.Name, "type", r.Type)
 		}
 	}
 	return nil

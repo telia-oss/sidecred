@@ -41,15 +41,18 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
+func runFunc(configPath *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
-		b, err := ioutil.ReadFile(*cfg)
+		b, err := ioutil.ReadFile(*configPath)
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
 		}
 		cfg, err := config.Parse(b)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %s", err)
+		}
+		if err := cfg.Validate(); err != nil {
+			return fmt.Errorf("failed to validate config: %s", err)
 		}
 		state, err := backend.Load(*statePath)
 		if err != nil {
