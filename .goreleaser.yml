@@ -3,31 +3,31 @@ before:
     - go mod download
 
 builds:
-- main: ./cmd/sidecred/main.go
-  <<: &config
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - darwin
-      - linux
-      - windows
-    goarch:
-      - amd64
-    ldflags: -buildid="" -s -w
+  - main: ./cmd/sidecred/main.go
+    <<: &config
+      env:
+        - CGO_ENABLED=0
+      goos:
+        - darwin
+        - linux
+        - windows
+      goarch:
+        - amd64
+      ldflags: -buildid="" -s -w
 
-- main: ./cmd/sidecred-lambda/main.go
-  <<: *config
-  id: sidecred-lambda
-  binary: sidecred-lambda
-  goos:
-    - linux
+  - main: ./cmd/sidecred-lambda/main.go
+    <<: *config
+    id: sidecred-lambda
+    binary: sidecred-lambda
+    goos:
+      - linux
 
 archives:
-  - name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
     format_overrides:
       - goos: windows
         format: zip
-  - name_template: "{{ .ProjectName }}-lambda-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - name_template: '{{ .ProjectName }}-lambda-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
     id: sidecred-lambda
     builds:
       - sidecred-lambda
@@ -37,7 +37,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ .Version }}-{{ .ShortCommit }}"
+  name_template: '{{ .Version }}-{{ .ShortCommit }}'
 
 release:
   prerelease: auto

@@ -10,28 +10,28 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Unshallow
-      run: git fetch --prune --unshallow
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with: { go-version: 1.14 }
-    - name: Release
-      uses: goreleaser/goreleaser-action@v2
-      with: { version: v0.136.0, args: release --rm-dist }
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Configure AWS
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-1
-    - name: Get version
-      id: version
-      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
-    - name: Upload Lambda
-      run: |
-        aws s3 cp "dist/sidecred-lambda-${VERSION}-linux-amd64.zip" "s3://telia-oss/sidecred-lambda/v${VERSION}.zip" --acl public-read
-      env:
-        VERSION: ${{ steps.version.outputs.VERSION }}
+      - uses: actions/checkout@v2
+      - name: Unshallow
+        run: git fetch --prune --unshallow
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with: { go-version: 1.14 }
+      - name: Release
+        uses: goreleaser/goreleaser-action@v2
+        with: { version: v0.136.0, args: release --rm-dist }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      - name: Get version
+        id: version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
+      - name: Upload Lambda
+        run: |
+          aws s3 cp "dist/sidecred-lambda-${VERSION}-linux-amd64.zip" "s3://telia-oss/sidecred-lambda/v${VERSION}.zip" --acl public-read
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
