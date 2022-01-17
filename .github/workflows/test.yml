@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Go
         uses: actions/setup-go@v2
-        with: { go-version: 1.14 }
+        with: { go-version: 1.17 }
       - name: Install task
         uses: arduino/setup-task@v1
       - name: Run tests
