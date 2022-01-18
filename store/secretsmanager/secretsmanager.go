@@ -4,6 +4,7 @@ package secretsmanager
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -73,8 +74,8 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 		Description: aws.String(secret.Description),
 	})
 	if err != nil {
-		e, ok := err.(awserr.Error)
-		if !ok {
+		var e awserr.Error
+		if !errors.As(err, &e) {
 			return "", fmt.Errorf("convert aws error: %s", err)
 		}
 		if e.Code() != secretsmanager.ErrCodeResourceExistsException {
@@ -100,8 +101,8 @@ func (s *store) Read(path string, _ json.RawMessage) (string, bool, error) {
 		SecretId: aws.String(path),
 	})
 	if err != nil {
-		e, ok := err.(awserr.Error)
-		if !ok {
+		var e awserr.Error
+		if !errors.As(err, &e) {
 			return "", false, fmt.Errorf("convert aws error: %v", err)
 		}
 		if e.Code() == secretsmanager.ErrCodeResourceNotFoundException {
@@ -120,8 +121,8 @@ func (s *store) Delete(path string, _ json.RawMessage) error {
 		ForceDeleteWithoutRecovery: aws.Bool(true),
 	})
 	if err != nil {
-		e, ok := err.(awserr.Error)
-		if !ok {
+		var e awserr.Error
+		if !errors.As(err, &e) {
 			return fmt.Errorf("convert aws error: %v", err)
 		}
 		if e.Code() == secretsmanager.ErrCodeResourceNotFoundException {

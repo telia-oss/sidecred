@@ -5,6 +5,7 @@ package s3
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -42,8 +43,8 @@ func (b *backend) Load(key string) (*sidecred.State, error) {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		e, ok := err.(awserr.Error)
-		if !ok {
+		var e awserr.Error
+		if !errors.As(err, &e) {
 			return nil, err
 		}
 		if e.Code() == s3.ErrCodeNoSuchKey {
