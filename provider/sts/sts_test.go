@@ -73,7 +73,8 @@ func TestSTSProvider(t *testing.T) {
 					SecretAccessKey: aws.String("secret-key"),
 					SessionToken:    aws.String("session-token"),
 					Expiration:      aws.Time(time.Now().UTC()),
-				}}, nil)
+				},
+			}, nil)
 
 			p := provider.New(
 				fakeSTSAPI,

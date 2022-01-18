@@ -128,9 +128,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	var (
-		secretPath = "/concourse/team-name/secret-name"
-	)
+	secretPath := "/concourse/team-name/secret-name"
 
 	tests := []struct {
 		description          string
