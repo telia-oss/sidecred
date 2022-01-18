@@ -120,8 +120,9 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 		return p.createDeployKey(request)
 	case sidecred.GithubAccessToken:
 		return p.createAccessToken(request)
+	default:
+		return nil, nil, fmt.Errorf("invalid request: %s", request.Type)
 	}
-	return nil, nil, fmt.Errorf("invalid request: %s", request.Type)
 }
 
 func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
