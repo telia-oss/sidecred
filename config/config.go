@@ -175,8 +175,12 @@ func (c *credentialRequest) flatten() []*sidecred.CredentialRequest {
 	}
 	var requests []*sidecred.CredentialRequest
 	for _, r := range c.List {
-		r.Type = c.CredentialRequest.Type
-		requests = append(requests, r)
+		requests = append(requests, &sidecred.CredentialRequest{
+			Type:           c.CredentialRequest.Type,
+			Name:           r.Name,
+			RotationWindow: r.RotationWindow,
+			Config:         r.Config,
+		})
 	}
 	return requests
 }

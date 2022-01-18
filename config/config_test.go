@@ -167,3 +167,36 @@ requests:
 		})
 	}
 }
+
+// Ref: https://github.com/telia-oss/sidecred/pull/69
+func TestV1Config_validate_side_effects(t *testing.T) {
+	cfg := strings.TrimSpace(`
+---
+version: 1
+namespace: cloudops
+
+stores:
+  - type: secretsmanager
+
+requests:
+  - store: secretsmanager
+    creds:
+    - type: aws:sts
+      list:
+      - name: open-source-dev-read-only
+        config:
+          role_arn: arn:aws:iam::role/role-name
+          duration: 15m
+            `)
+
+	want, err := config.Parse([]byte(cfg))
+	require.NoError(t, err)
+
+	actual, err := config.Parse([]byte(cfg))
+	require.NoError(t, err)
+
+	err = actual.Validate()
+	require.NoError(t, err)
+
+	require.Equal(t, want, actual, "validate should not mutate config")
+}
