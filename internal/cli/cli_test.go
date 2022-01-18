@@ -5,6 +5,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alecthomas/kingpin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
+
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/s3"
 	"github.com/telia-oss/sidecred/backend/s3/s3fakes"
@@ -16,13 +23,6 @@ import (
 	"github.com/telia-oss/sidecred/store/secretsmanager/secretsmanagerfakes"
 	"github.com/telia-oss/sidecred/store/ssm"
 	"github.com/telia-oss/sidecred/store/ssm/ssmfakes"
-
-	"github.com/alecthomas/kingpin"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest"
 )
 
 func testAWSClientFactory() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI) {

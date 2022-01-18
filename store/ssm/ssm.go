@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/telia-oss/sidecred"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+
+	"github.com/telia-oss/sidecred"
 )
 
 // NewClient returns a new SSMAPI client.

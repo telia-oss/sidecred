@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/telia-oss/sidecred"
 	secretstore "github.com/telia-oss/sidecred/store/inprocess"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestInProcessStore(t *testing.T) {

@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/telia-oss/sidecred"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/telia-oss/sidecred"
 )
 
 // NewClient returns a new client for S3API.

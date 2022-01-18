@@ -6,6 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/alecthomas/kingpin"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/telia-oss/githubapp"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/file"
 	"github.com/telia-oss/sidecred/backend/s3"
@@ -17,13 +24,6 @@ import (
 	"github.com/telia-oss/sidecred/store/inprocess"
 	"github.com/telia-oss/sidecred/store/secretsmanager"
 	"github.com/telia-oss/sidecred/store/ssm"
-
-	"github.com/alecthomas/kingpin"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/telia-oss/githubapp"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Type definitions that allow us to reuse the CLI (flags and setup) between binaries, and

@@ -10,11 +10,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/telia-oss/githubapp"
-	"github.com/telia-oss/sidecred"
-
 	"github.com/google/go-github/v41/github"
+	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/nacl/box"
+
+	"github.com/telia-oss/sidecred"
 )
 
 // New creates a new sidecred.SecretStore using Github repository secrets.

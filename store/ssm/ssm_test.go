@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/telia-oss/sidecred"
-	secretstore "github.com/telia-oss/sidecred/store/ssm"
-	"github.com/telia-oss/sidecred/store/ssm/ssmfakes"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/telia-oss/sidecred"
+	secretstore "github.com/telia-oss/sidecred/store/ssm"
+	"github.com/telia-oss/sidecred/store/ssm/ssmfakes"
 )
 
 func TestWrite(t *testing.T) {

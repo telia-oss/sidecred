@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/alecthomas/kingpin"
+
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/config"
 	"github.com/telia-oss/sidecred/internal/cli"
-
-	"github.com/alecthomas/kingpin"
 )
 
 var version string

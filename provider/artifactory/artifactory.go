@@ -26,12 +26,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+
+	"github.com/telia-oss/sidecred"
 )
 
 var _ sidecred.Validatable = &RequestConfig{}

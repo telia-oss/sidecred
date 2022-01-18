@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/telia-oss/sidecred"
-	secretstore "github.com/telia-oss/sidecred/store/github"
-	"github.com/telia-oss/sidecred/store/github/githubfakes"
-
 	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/telia-oss/githubapp"
+
+	"github.com/telia-oss/sidecred"
+	secretstore "github.com/telia-oss/sidecred/store/github"
+	"github.com/telia-oss/sidecred/store/github/githubfakes"
 )
 
 var (

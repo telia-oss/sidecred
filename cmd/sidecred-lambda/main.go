@@ -6,16 +6,16 @@ import (
 	"io"
 	"os"
 
-	"github.com/telia-oss/sidecred"
-	"github.com/telia-oss/sidecred/config"
-	"github.com/telia-oss/sidecred/internal/cli"
-
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	environment "github.com/telia-oss/aws-env"
+
+	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
+	"github.com/telia-oss/sidecred/internal/cli"
 )
 
 var version string

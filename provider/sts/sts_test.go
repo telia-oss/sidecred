@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-	provider "github.com/telia-oss/sidecred/provider/sts"
-	"github.com/telia-oss/sidecred/provider/sts/stsfakes"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/telia-oss/sidecred"
+	provider "github.com/telia-oss/sidecred/provider/sts"
+	"github.com/telia-oss/sidecred/provider/sts/stsfakes"
 )
 
 func TestSTSProvider(t *testing.T) {

@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/telia-oss/sidecred"
-	"github.com/telia-oss/sidecred/config"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
 )
 
 func TestV1Config(t *testing.T) {

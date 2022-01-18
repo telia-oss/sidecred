@@ -4,9 +4,9 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/telia-oss/sidecred/config"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/telia-oss/sidecred/config"
 )
 
 // Verify that the testdata referenced in README.md is valid.

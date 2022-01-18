@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/telia-oss/sidecred"
-	backend "github.com/telia-oss/sidecred/backend/s3"
-	"github.com/telia-oss/sidecred/backend/s3/s3fakes"
-
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/telia-oss/sidecred"
+	backend "github.com/telia-oss/sidecred/backend/s3"
+	"github.com/telia-oss/sidecred/backend/s3/s3fakes"
 )
 
 func TestS3Backend(t *testing.T) {

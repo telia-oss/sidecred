@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-	"github.com/telia-oss/sidecred/config"
-	"github.com/telia-oss/sidecred/store/inprocess"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+
+	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
+	"github.com/telia-oss/sidecred/store/inprocess"
 )
 
 var (
