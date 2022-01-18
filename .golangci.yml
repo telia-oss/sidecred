@@ -7,7 +7,6 @@ linters:
   enable:
     - bidichk
     - contextcheck
-    - deadcode
     - errcheck
     - errorlint
     - exhaustive
@@ -22,14 +21,12 @@ linters:
     - ineffassign
     - misspell
     - staticcheck
-    - structcheck
     - stylecheck
     - tenv
     - testpackage
     - thelper
     - typecheck
     - unused
-    - varcheck
     - wastedassign
 
 linters-settings:
