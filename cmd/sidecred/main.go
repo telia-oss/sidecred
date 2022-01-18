@@ -55,7 +55,12 @@ func runFunc(cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.S
 		if err != nil {
 			return fmt.Errorf("failed to load state: %s", err)
 		}
-		defer backend.Save(*statePath, state)
-		return s.Process(cfg, state)
+		if err := s.Process(cfg, state); err != nil {
+			return err
+		}
+		if err := backend.Save(*statePath, state); err != nil {
+			return fmt.Errorf("failed to save state: %s", err)
+		}
+		return nil
 	}
 }
