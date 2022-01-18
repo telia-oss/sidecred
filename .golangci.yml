@@ -1,0 +1,71 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - bidichk
+    - contextcheck
+    - deadcode
+    - errcheck
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - gci
+    - gochecknoinits
+    - gocritic
+    - gofumpt
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - tenv
+    - testpackage
+    - thelper
+    - typecheck
+    - unused
+    - varcheck
+    - wastedassign
+
+linters-settings:
+  gci:
+    local-prefixes: github.com/telia-oss/sidecred
+  errorlint:
+    errorf: false
+  exhaustive:
+    default-signifies-exhaustive: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - docStub
+      - unlabelStmt
+      - unnamedResult
+  gosec:
+    excludes:
+      - G101
+      - G306
+  misspell:
+    locale: US
+  govet:
+    check-shadowing: true
+
+issues:
+  exclude-rules:
+    - path: \.go
+      text: 'declaration of "(err|ctx|log)" shadows declaration at'
+    - path: cmd/sidecred/main_test.go
+      text: 'package should be `main_test` instead of `main`'
+    - path: internal/cli/cli.go
+      text: 'Error return value of `logger.Sync` is not checked'
+    - path: provider/random/random.go
+      text: 'G404: Use of weak random number generator'

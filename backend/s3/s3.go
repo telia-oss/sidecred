@@ -5,14 +5,15 @@ package s3
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
-
-	"github.com/telia-oss/sidecred"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/telia-oss/sidecred"
 )
 
 // NewClient returns a new client for S3API.
@@ -42,8 +43,8 @@ func (b *backend) Load(key string) (*sidecred.State, error) {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		e, ok := err.(awserr.Error)
-		if !ok {
+		var e awserr.Error
+		if !errors.As(err, &e) {
 			return nil, err
 		}
 		if e.Code() == s3.ErrCodeNoSuchKey {

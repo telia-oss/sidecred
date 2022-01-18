@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/githubapp"
-	"github.com/telia-oss/sidecred"
-	provider "github.com/telia-oss/sidecred/provider/github"
-	"github.com/telia-oss/sidecred/provider/github/githubfakes"
-
 	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/telia-oss/githubapp"
+
+	"github.com/telia-oss/sidecred"
+	provider "github.com/telia-oss/sidecred/provider/github"
+	"github.com/telia-oss/sidecred/provider/github/githubfakes"
 )
 
 func TestGithubProvider(t *testing.T) {

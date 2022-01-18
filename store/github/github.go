@@ -10,12 +10,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/telia-oss/githubapp"
-	"github.com/telia-oss/sidecred"
-
 	"github.com/google/go-github/v41/github"
+	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/nacl/box"
+
+	"github.com/telia-oss/sidecred"
 )
+
+// illegalCharactersRegex matches characters that are not supported by Github,
+// and is used to sanitize the secret path.
+var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // New creates a new sidecred.SecretStore using Github repository secrets.
 func New(app App, options ...option) sidecred.SecretStore {
@@ -202,11 +206,7 @@ func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *githu
 // sanitizeSecretPath replaces all illegal characters in the path with "_" (underscore) and makes the name uppercase. See link for legal names:
 // https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#naming-your-secrets
 func (s *store) sanitizeSecretPath(path string) (string, error) {
-	re, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		return "", err
-	}
-	sp := re.ReplaceAllString(path, "_")
+	sp := illegalCharactersRegex.ReplaceAllString(path, "_")
 	return strings.ToUpper(sp), nil
 }
 

@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-	"github.com/telia-oss/sidecred/config"
-	"github.com/telia-oss/sidecred/store/inprocess"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+
+	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/config"
+	"github.com/telia-oss/sidecred/store/inprocess"
 )
 
 var (
@@ -353,7 +353,7 @@ requests:
 }
 
 // This test exists because looping over pointers as done when cleaning up expired/deposed
-// resources (and deposed secrets) can lead to surprising behaviours. The test below ensures
+// resources (and deposed secrets) can lead to surprising behaviors. The test below ensures
 // that things are working as intended.
 func TestProcessCleanup(t *testing.T) {
 	tests := []struct {

@@ -6,15 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/telia-oss/sidecred"
 )
 
-var (
-	fixedTestTime = time.Date(2020, 1, 30, 12, 0, 0, 0, time.UTC)
-)
+var fixedTestTime = time.Date(2020, 1, 30, 12, 0, 0, 0, time.UTC)
 
 func TestState(t *testing.T) {
 	tests := []struct {

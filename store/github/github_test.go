@@ -4,18 +4,16 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/telia-oss/sidecred"
-	secretstore "github.com/telia-oss/sidecred/store/github"
-	"github.com/telia-oss/sidecred/store/github/githubfakes"
-
 	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/telia-oss/githubapp"
+
+	"github.com/telia-oss/sidecred"
+	secretstore "github.com/telia-oss/sidecred/store/github"
+	"github.com/telia-oss/sidecred/store/github/githubfakes"
 )
 
-var (
-	installationToken = &github.InstallationToken{Token: github.String("access-token")}
-)
+var installationToken = &github.InstallationToken{Token: github.String("access-token")}
 
 func TestWrite(t *testing.T) {
 	var (
@@ -120,9 +118,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	var (
-		secretPath = "CONCOURSE_TEAM_NAME_SECRET_NAME"
-	)
+	secretPath := "CONCOURSE_TEAM_NAME_SECRET_NAME"
 
 	tests := []struct {
 		description       string

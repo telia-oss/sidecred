@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"sigs.k8s.io/yaml"
+
+	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/provider/artifactory"
 	"github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/random"
 	"github.com/telia-oss/sidecred/provider/sts"
-
-	"github.com/telia-oss/sidecred"
-	"sigs.k8s.io/yaml"
 )
 
 // Parse a YAML (or JSON) representation of sidecred.Config.

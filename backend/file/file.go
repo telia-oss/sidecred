@@ -4,7 +4,6 @@ package file
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/telia-oss/sidecred"
@@ -23,7 +22,7 @@ func (b *fileStateBackend) Load(file string) (*sidecred.State, error) {
 		return nil, err
 	}
 	var state sidecred.State
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +31,6 @@ func (b *fileStateBackend) Load(file string) (*sidecred.State, error) {
 	}
 	if err := json.Unmarshal(data, &state); err != nil {
 		return nil, err
-
 	}
 	return &state, nil
 }
@@ -46,7 +44,7 @@ func (b *fileStateBackend) Save(file string, state *sidecred.State) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(file, o, 0644)
+	return os.WriteFile(file, o, 0o644)
 }
 
 func (b *fileStateBackend) createFileIfNotExists(file string) error {

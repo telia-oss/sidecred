@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/telia-oss/sidecred"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+
+	"github.com/telia-oss/sidecred"
 )
 
 var _ sidecred.Validatable = &RequestConfig{}

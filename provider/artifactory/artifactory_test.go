@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/telia-oss/sidecred"
 	provider "github.com/telia-oss/sidecred/provider/artifactory"
 	"github.com/telia-oss/sidecred/provider/artifactory/artifactoryfakes"
