@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 
 env:
   TERM: screen-256color
@@ -29,12 +29,12 @@ tasks:
   go-generate:
     desc: Generate test fakes
     cmds:
-    - go generate ./...
+      - go generate ./...
 
   go-test:
     desc: Run tests for all Go code.
     silent: true
     cmds:
-    - gofmt -s -l -w .
-    - go vet -v ./...
-    - go test -race -v ./...
+      - gofmt -s -l -w .
+      - go vet -v ./...
+      - go test -race -v ./...
