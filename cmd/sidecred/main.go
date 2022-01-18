@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/alecthomas/kingpin"
@@ -24,7 +23,7 @@ func main() {
 
 	validate := app.Command("validate", "Validate a sidecred config.")
 	validate.Action(func(_ *kingpin.ParseContext) error {
-		b, err := ioutil.ReadFile(*configPath)
+		b, err := os.ReadFile(*configPath)
 		if err != nil {
 			app.Fatalf("failed to read config: %s", err)
 		}
@@ -41,9 +40,9 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(cfg *string, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
+func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
-		b, err := ioutil.ReadFile(*cfg)
+		b, err := os.ReadFile(*cfg)
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
 		}

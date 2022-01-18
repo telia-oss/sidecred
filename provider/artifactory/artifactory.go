@@ -79,7 +79,7 @@ func (c *RequestConfig) Validate() error {
 }
 
 // NewClient returns a new client for ArtifactoryAPI.
-func NewClient(hostname string, username string, password string, accessToken string, apiKey string) (ArtifactoryAPI, error) {
+func NewClient(hostname, username, password, accessToken, apiKey string) (ArtifactoryAPI, error) {
 	rtDetails := auth.NewArtifactoryDetails()
 	rtDetails.SetUrl(hostname)
 	rtDetails.SetUser(username)

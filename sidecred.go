@@ -277,7 +277,7 @@ func BuildSecretTemplate(secretTemplate, namespace, name string) (string, error)
 
 	var p strings.Builder
 
-	if err = t.Execute(&p, struct {
+	if err := t.Execute(&p, struct {
 		Namespace string
 		Name      string
 	}{

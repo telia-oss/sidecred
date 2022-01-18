@@ -1,7 +1,7 @@
 package s3_test
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -26,7 +26,7 @@ func TestS3Backend(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			fakeS3 := &s3fakes.FakeS3API{}
-			fakeS3.GetObjectReturns(&s3.GetObjectOutput{Body: ioutil.NopCloser(strings.NewReader("{}"))}, nil)
+			fakeS3.GetObjectReturns(&s3.GetObjectOutput{Body: io.NopCloser(strings.NewReader("{}"))}, nil)
 
 			b := backend.New(fakeS3, "bucket")
 			state, err := b.Load("key")

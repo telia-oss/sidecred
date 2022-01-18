@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,7 +11,7 @@ import (
 
 // Verify that the testdata referenced in README.md is valid.
 func TestUnmarshalTestData(t *testing.T) {
-	b, err := ioutil.ReadFile("./testdata/config.yml")
+	b, err := os.ReadFile("./testdata/config.yml")
 	require.NoError(t, err)
 
 	cfg, err := config.Parse(b)
