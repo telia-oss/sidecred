@@ -20,6 +20,11 @@ tasks:
       - task: go-test
       - goreleaser --snapshot --rm-dist
 
+  lint:
+    desc: Run golangci-lint.
+    cmds:
+      - golangci-lint run --sort-results --fix
+
   e2e:
     desc: Run E2E test suite
     cmds:
