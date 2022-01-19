@@ -4,6 +4,7 @@ before:
 
 builds:
   - main: ./cmd/sidecred/main.go
+    id: sidecred
     <<: &config
       env:
         - CGO_ENABLED=0
@@ -24,6 +25,9 @@ builds:
 
 archives:
   - name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
+    id: sidecred
+    builds:
+      - sidecred
     format_overrides:
       - goos: windows
         format: zip
