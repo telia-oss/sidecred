@@ -55,6 +55,19 @@ func TestGithubProvider(t *testing.T) {
 				Description: "Github access token managed by sidecred.",
 			}},
 		},
+		{
+			description: "Github provider works for access tokens with team and token name specified",
+			request: &sidecred.CredentialRequest{
+				Type:   sidecred.GithubAccessToken,
+				Name:   "request-name",
+				Config: []byte(`{"owner":"request-owner", "team_name":"test-team", "token_name": "test-token"}`),
+			},
+			expected: []*sidecred.Credential{{
+				Name:        "test-team/test-token",
+				Value:       "access-token",
+				Description: "Github access token managed by sidecred.",
+			}},
+		},
 	}
 
 	for _, tc := range tests {

@@ -51,8 +51,10 @@ func (c *DeployKeyRequestConfig) Validate() error {
 // AccessTokenRequestConfig ...
 type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
+	TeamName     string 				`json:"team_name,omitempty"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
+	TokenName 	 string					`json:"token_name,omitempty"`
 }
 
 // Validate implements sidecred.Validatable.
@@ -138,8 +140,13 @@ func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*si
 	if err != nil {
 		return nil, nil, fmt.Errorf("create access token: %s", err)
 	}
+
+	tokenName := c.Owner + "-access-token"
+	if c.TokenName != "" && c.TeamName != "" {
+		tokenName = c.TeamName + "/" + c.TokenName
+	}
 	return []*sidecred.Credential{{
-		Name:        c.Owner + "-access-token",
+		Name:        tokenName,
 		Value:       token.GetToken(),
 		Description: "Github access token managed by sidecred.",
 		Expiration:  token.GetExpiresAt().UTC(),
