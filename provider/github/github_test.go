@@ -60,7 +60,7 @@ func TestGithubProvider(t *testing.T) {
 			request: &sidecred.CredentialRequest{
 				Type:   sidecred.GithubAccessToken,
 				Name:   "request-name",
-				Config: []byte(`{"owner":"request-owner", "team_name":"test-team", "token_name": "test-token"}`),
+				Config: []byte(`{"owner":"request-owner", "token_name": "test-team/test-token"}`),
 			},
 			expected: []*sidecred.Credential{{
 				Name:        "test-team/test-token",

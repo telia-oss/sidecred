@@ -51,7 +51,6 @@ func (c *DeployKeyRequestConfig) Validate() error {
 // AccessTokenRequestConfig ...
 type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
-	TeamName     string 				`json:"team_name,omitempty"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
 	TokenName 	 string					`json:"token_name,omitempty"`
@@ -141,9 +140,10 @@ func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*si
 		return nil, nil, fmt.Errorf("create access token: %s", err)
 	}
 
+	// If token_name is not provided, use default token naming
 	tokenName := c.Owner + "-access-token"
-	if c.TokenName != "" && c.TeamName != "" {
-		tokenName = c.TeamName + "/" + c.TokenName
+	if c.TokenName != "" {
+		tokenName = c.TokenName
 	}
 	return []*sidecred.Credential{{
 		Name:        tokenName,
