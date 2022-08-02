@@ -53,7 +53,7 @@ type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
-	TokenName 	 string					`json:"token_name,omitempty"`
+	TokenName    string		    `json:"token_name,omitempty"`
 }
 
 // Validate implements sidecred.Validatable.
