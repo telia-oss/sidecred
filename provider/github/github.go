@@ -53,6 +53,7 @@ type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
+	TokenName    string		    `json:"token_name,omitempty"`
 }
 
 // Validate implements sidecred.Validatable.
@@ -138,8 +139,14 @@ func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*si
 	if err != nil {
 		return nil, nil, fmt.Errorf("create access token: %s", err)
 	}
+
+	// If token_name is not provided, use default token naming
+	tokenName := c.Owner + "-access-token"
+	if c.TokenName != "" {
+		tokenName = c.TokenName
+	}
 	return []*sidecred.Credential{{
-		Name:        c.Owner + "-access-token",
+		Name:        tokenName,
 		Value:       token.GetToken(),
 		Description: "Github access token managed by sidecred.",
 		Expiration:  token.GetExpiresAt().UTC(),
