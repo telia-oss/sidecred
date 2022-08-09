@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/nacl/box"
 
@@ -22,13 +22,13 @@ import (
 var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // New creates a new sidecred.SecretStore using Github repository secrets.
-func New(app App, options ...option) sidecred.SecretStore {
+func New(app App, options ...Option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
 		keys:           make(map[string]*github.PublicKey),
 		secretTemplate: "{{ .Namespace }}_{{ .Name }}",
 		actionsClientFactory: func(token string) ActionsAPI {
-			return githubapp.NewInstallationClient(token).V3.Actions
+			return githubapp.NewInstallationClient(token).V3.Dependabot
 		},
 	}
 	for _, optionFunc := range options {
@@ -37,17 +37,17 @@ func New(app App, options ...option) sidecred.SecretStore {
 	return s
 }
 
-type option func(*store)
+type Option func(*store)
 
 // WithSecretTemplate sets the secret name template when instantiating a new store.
-func WithSecretTemplate(t string) option {
+func WithSecretTemplate(t string) Option {
 	return func(s *store) {
 		s.secretTemplate = t
 	}
 }
 
 // WithActionsClientFactory sets the function used to create new installation clients, and can be used to return test fakes.
-func WithActionsClientFactory(f func(token string) ActionsAPI) option {
+func WithActionsClientFactory(f func(token string) ActionsAPI) Option {
 	return func(s *store) {
 		s.actionsClientFactory = f
 	}
@@ -114,11 +114,13 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 		return "", fmt.Errorf("sanitize path: %w", err)
 	}
 
-	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
-		Name:           path,
-		KeyID:          publicKey.GetKeyID(),
-		EncryptedValue: encryptedSecret,
-	})
+	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(
+		context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
+			Name:           path,
+			KeyID:          publicKey.GetKeyID(),
+			EncryptedValue: encryptedSecret,
+		},
+	)
 	if err != nil {
 		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
 	}
@@ -138,7 +140,12 @@ func (s *store) Read(path string, config json.RawMessage) (string, bool, error) 
 	if err != nil {
 		return "", false, fmt.Errorf("create secrets access token: %w", err)
 	}
-	secret, _, err := s.actionsClientFactory(token.GetToken()).GetRepoSecret(context.TODO(), c.owner, c.repository, path)
+	secret, _, err := s.actionsClientFactory(token.GetToken()).GetRepoSecret(
+		context.TODO(),
+		c.owner,
+		c.repository,
+		path,
+	)
 	if err != nil {
 		return "", false, fmt.Errorf("get secret: %w", err)
 	}
@@ -214,7 +221,10 @@ func (s *store) sanitizeSecretPath(path string) (string, error) {
 //
 //counterfeiter:generate . App
 type App interface {
-	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
+	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (
+		*githubapp.Token,
+		error,
+	)
 }
 
 // ActionsAPI wraps the Github actions API.
@@ -222,7 +232,11 @@ type App interface {
 //counterfeiter:generate . ActionsAPI
 type ActionsAPI interface {
 	GetRepoPublicKey(ctx context.Context, owner, repo string) (*github.PublicKey, *github.Response, error)
-	CreateOrUpdateRepoSecret(ctx context.Context, owner, repo string, eSecret *github.EncryptedSecret) (*github.Response, error)
+	CreateOrUpdateRepoSecret(
+		ctx context.Context,
+		owner, repo string,
+		eSecret *github.EncryptedSecret,
+	) (*github.Response, error)
 	GetRepoSecret(ctx context.Context, owner, repo, name string) (*github.Secret, *github.Response, error)
 	DeleteRepoSecret(ctx context.Context, owner, repo, name string) (*github.Response, error)
 }

@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/ssh"
 

@@ -60,6 +60,7 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		ssmStoreSecretTemplate             = cmd.Flag("ssm-store-secret-template", "Path template to use for SSM Parameter store").Default("/{{ .Namespace }}/{{ .Name }}").String()
 		ssmStoreKMSKeyID                   = cmd.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
 		githubStoreEnabled                 = cmd.Flag("github-store-enabled", "Enable Github repository secrets store").Bool()
+		githubDependabotSecretsEnabled     = cmd.Flag("github-store-dependabot-enabled", "Enable Github repository Dependabot secrets store").Default("true").Bool()
 		githubStoreSecretTemplate          = cmd.Flag("github-store-secret-template", "Template to use for naming Github repository secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
 		githubStoreIntegrationID           = cmd.Flag("github-store-integration-id", "Github Apps integration ID").Int64()
 		githubStorePrivateKey              = cmd.Flag("github-store-private-key", "Github apps private key").String()
@@ -143,6 +144,16 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 				githubapp.New(client),
 				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
+
+			if *githubDependabotSecretsEnabled {
+				stores = append(stores, githubstore.New(
+					githubapp.New(client),
+					githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
+					githubstore.WithActionsClientFactory(func(token string) githubstore.ActionsAPI {
+						return githubapp.NewInstallationClient(token).V3.Dependabot
+					}),
+				))
+			}
 		}
 
 		var backend sidecred.StateBackend
