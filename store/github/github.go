@@ -28,7 +28,7 @@ func NewStore(app App, options ...Option) sidecred.SecretStore {
 		keys:           make(map[string]*github.PublicKey),
 		secretTemplate: "{{ .Namespace }}_{{ .Name }}",
 		actionsClientFactory: func(token string) ActionsAPI {
-			return githubapp.NewInstallationClient(token).V3.Dependabot
+			return githubapp.NewInstallationClient(token).V3.Actions
 		},
 	}
 	for _, optionFunc := range options {
