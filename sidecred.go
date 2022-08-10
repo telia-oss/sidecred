@@ -228,10 +228,11 @@ type Credential struct {
 
 // Enumeration of known backends.
 const (
-	Inprocess      StoreType = "inprocess"
-	SecretsManager StoreType = "secretsmanager"
-	SSM            StoreType = "ssm"
-	GithubSecrets  StoreType = "github"
+	Inprocess               StoreType = "inprocess"
+	SecretsManager          StoreType = "secretsmanager"
+	SSM                     StoreType = "ssm"
+	GithubSecrets           StoreType = "github"
+	GithubDependabotSecrets StoreType = "github-dependabot"
 )
 
 // StoreType ...

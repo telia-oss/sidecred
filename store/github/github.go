@@ -21,8 +21,8 @@ import (
 // and is used to sanitize the secret path.
 var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-// New creates a new sidecred.SecretStore using Github repository secrets.
-func New(app App, options ...Option) sidecred.SecretStore {
+// NewStore creates a new sidecred.SecretStore using Github repository secrets.
+func NewStore(app App, options ...Option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
 		keys:           make(map[string]*github.PublicKey),
@@ -34,6 +34,11 @@ func New(app App, options ...Option) sidecred.SecretStore {
 	for _, optionFunc := range options {
 		optionFunc(s)
 	}
+
+	if s.storeType == "" {
+		s.storeType = sidecred.GithubSecrets
+	}
+
 	return s
 }
 
@@ -53,8 +58,16 @@ func WithActionsClientFactory(f func(token string) ActionsAPI) Option {
 	}
 }
 
+// forStoreType sets the storeType of this GitHub store
+func forStoreType(storeType sidecred.StoreType) Option {
+	return func(s *store) {
+		s.storeType = storeType
+	}
+}
+
 type store struct {
 	app                  App
+	storeType            sidecred.StoreType
 	keys                 map[string]*github.PublicKey
 	actionsClientFactory func(token string) ActionsAPI
 	secretTemplate       string
@@ -72,7 +85,7 @@ type config struct {
 
 // Type implements sidecred.SecretStore.
 func (s *store) Type() sidecred.StoreType {
-	return sidecred.GithubSecrets
+	return s.storeType
 }
 
 // Write implements sidecred.SecretStore.
@@ -215,28 +228,4 @@ func (s *store) encryptSecretValue(secret *sidecred.Credential, publicKey *githu
 func (s *store) sanitizeSecretPath(path string) (string, error) {
 	sp := illegalCharactersRegex.ReplaceAllString(path, "_")
 	return strings.ToUpper(sp), nil
-}
-
-// App is the interface that needs to be satisfied by the Github App implementation.
-//
-//counterfeiter:generate . App
-type App interface {
-	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (
-		*githubapp.Token,
-		error,
-	)
-}
-
-// ActionsAPI wraps the Github actions API.
-//
-//counterfeiter:generate . ActionsAPI
-type ActionsAPI interface {
-	GetRepoPublicKey(ctx context.Context, owner, repo string) (*github.PublicKey, *github.Response, error)
-	CreateOrUpdateRepoSecret(
-		ctx context.Context,
-		owner, repo string,
-		eSecret *github.EncryptedSecret,
-	) (*github.Response, error)
-	GetRepoSecret(ctx context.Context, owner, repo, name string) (*github.Secret, *github.Response, error)
-	DeleteRepoSecret(ctx context.Context, owner, repo, name string) (*github.Response, error)
 }

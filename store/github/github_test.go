@@ -57,7 +57,7 @@ func TestWrite(t *testing.T) {
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
 			fakeActionsAPI.CreateOrUpdateRepoSecretReturns(nil, nil)
 
-			store := secretstore.New(fakeApp,
+			store := secretstore.NewStore(fakeApp,
 				secretstore.WithSecretTemplate(tc.secretTemplate),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
@@ -103,7 +103,7 @@ func TestRead(t *testing.T) {
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
 			fakeActionsAPI.GetRepoSecretReturns(&github.Secret{Name: secretValue}, nil, nil)
 
-			store := secretstore.New(fakeApp,
+			store := secretstore.NewStore(fakeApp,
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
@@ -142,7 +142,7 @@ func TestDelete(t *testing.T) {
 			fakeActionsAPI := &githubfakes.FakeActionsAPI{}
 			fakeActionsAPI.DeleteRepoSecretReturns(nil, nil)
 
-			store := secretstore.New(fakeApp,
+			store := secretstore.NewStore(fakeApp,
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),

@@ -2,3 +2,5 @@
 dist/
 # Goland IDE
 .idea/
+
+state.json
