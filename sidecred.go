@@ -232,7 +232,7 @@ const (
 	SecretsManager          StoreType = "secretsmanager"
 	SSM                     StoreType = "ssm"
 	GithubSecrets           StoreType = "github"
-	GithubDependabotSecrets StoreType = "github-dependabot"
+	GithubDependabotSecrets StoreType = "github:dependabot"
 )
 
 // StoreType ...

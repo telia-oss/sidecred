@@ -4,3 +4,5 @@ dist/
 .idea/
 
 state.json
+
+config.yml
