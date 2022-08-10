@@ -44,7 +44,7 @@ stores:
     config:
       repository: telia-oss/sidecred
       secret_template: "{{ .Namespace }}_{{ .Name }}"
-  - type: github-dependabot
+  - type: github:dependabot
     config:
       repository: telia-oss/sidecred
       secret_template: "{{ .Namespace }}_{{ .Name }}"
@@ -57,6 +57,13 @@ requests:
         config:
           role_arn: arn:aws:iam::role/role-name
           duration: 15m
+  - store: github:dependabot
+    creds:
+      - type: aws:sts
+        name: open-source-dev-read-only
+        config:
+          role_arn: arn:aws:iam::role/role-name
+          duration: 15m          
   - store: secretsmanager
     creds:
       - type: github:access-token
