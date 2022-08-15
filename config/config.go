@@ -78,7 +78,6 @@ func (c *v1) Validate() error {
 	stores := make(map[string]struct{}, len(c.CredentialStores))
 	for i, s := range c.CredentialStores {
 		switch s.Type {
-		// todo data-driven
 		case sidecred.Inprocess, sidecred.SSM, sidecred.SecretsManager, sidecred.GithubSecrets, sidecred.GithubDependabotSecrets:
 		default:
 			return fmt.Errorf("stores[%d]: unknown type %q", i, string(s.Type))
