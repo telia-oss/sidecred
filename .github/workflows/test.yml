@@ -19,5 +19,4 @@ jobs:
       - name: Run tests
         run: task test
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.2
-        with: { version: latest, skip-pkg-cache: true, skip-build-cache: true }
+        run: task lint
