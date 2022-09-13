@@ -14,11 +14,10 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with: { go-version: 1.17 }
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - name: Install task
         uses: arduino/setup-task@v1
       - name: Run tests
         run: task test
       - name: Run golangci-lint
-        run: task lint
+        uses: golangci/golangci-lint-action@v3
+        with: { version: latest, skip-pkg-cache: true, skip-build-cache: true }
