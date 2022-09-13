@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"golang.org/x/crypto/ssh"
 
@@ -53,7 +53,7 @@ type AccessTokenRequestConfig struct {
 	Owner        string                 `json:"owner"`
 	Repositories []string               `json:"repositories,omitempty"`
 	Permissions  *githubapp.Permissions `json:"permissions,omitempty"`
-	TokenName    string		    `json:"token_name,omitempty"`
+	TokenName    string                 `json:"token_name,omitempty"`
 }
 
 // Validate implements sidecred.Validatable.

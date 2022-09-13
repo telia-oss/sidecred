@@ -1,7 +1,7 @@
 name: test
 
 on:
-  pull_request: {}
+  pull_request: { }
   push:
     branches:
       - master
@@ -12,12 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with: { go-version: 1.17 }
       - name: Install task
         uses: arduino/setup-task@v1
       - name: Run tests
         run: task test
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.2
-        with: { version: latest, skip-pkg-cache: true, skip-build-cache: true }
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version:  v1.47.3
+          skip-pkg-cache: true
+          skip-build-cache: true

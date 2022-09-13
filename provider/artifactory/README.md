@@ -1,8 +1,10 @@
 # Artifactory Provider
 
-This provider is used to generate time limited access tokens for access to [Artifactory](https://jfrog.com/artifactory/).
+This provider is used to generate time limited access tokens for access to [Artifactory](https://jfrog.com/artifactory/)
+.
 
-See the [package documentation](https://godoc.org/github.com/telia-oss/sidecred/provider/artifactory) for more information.
+See the [package documentation](https://godoc.org/github.com/telia-oss/sidecred/provider/artifactory) for more
+information.
 
 ### Environment / Options
 
@@ -22,4 +24,5 @@ The fields marked as not optional assume that the provider is enabled.
 
 ### Request
 
-See the [official documentation](https://godoc.org/github.com/telia-oss/sidecred/provider/artifactory/#RequestConfig) for request configuration.
+See the [official documentation](https://godoc.org/github.com/telia-oss/sidecred/provider/artifactory/#RequestConfig)
+for request configuration.

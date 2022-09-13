@@ -1,6 +1,6 @@
 //go:build e2e
 
-package github_test
+package github
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/telia-oss/sidecred"
-	secretstore "github.com/telia-oss/sidecred/store/github"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,10 +56,11 @@ func TestGithubStoreE2E(t *testing.T) {
 			client, err := githubapp.NewClient(integrationID, privateKey)
 			require.NoError(t, err)
 
-			store := secretstore.New(
+			store := newStore(
 				githubapp.New(client),
-				secretstore.WithSecretTemplate(tc.pathTemplate),
+				WithSecretTemplate(tc.pathTemplate),
 			)
+			assert.Equal(t, sidecred.GithubSecrets, store.Type())
 
 			config := []byte(fmt.Sprintf(`{"repository":"%s/%s"}`, targetOrganisation, targetRepository))
 

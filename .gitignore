@@ -2,3 +2,7 @@
 dist/
 # Goland IDE
 .idea/
+
+state.json
+
+config.yml
