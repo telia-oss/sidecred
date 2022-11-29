@@ -65,8 +65,8 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		githubStorePrivateKey               = cmd.Flag("github-store-private-key", "Github apps private key").Strings()
 		githubDependabotStoreEnabled        = cmd.Flag("github-dependabot-store-enabled", "Enable Github repository Dependabot secrets store").Bool()
 		githubDependabotStoreSecretTemplate = cmd.Flag("github-dependabot-store-secret-template", "Template to use for naming Github repository Dependabot secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
-		githubDependabotStoreIntegrationID  = cmd.Flag("github-dependabot-store-integration-id", "Github Apps integration ID").Int64()
-		githubDependabotStorePrivateKey     = cmd.Flag("github-dependabot-store-private-key", "Github apps private key").String()
+		githubDependabotStoreIntegrationID  = cmd.Flag("github-dependabot-store-integration-id", "Github Apps integration ID").Int64List()
+		githubDependabotStorePrivateKey     = cmd.Flag("github-dependabot-store-private-key", "Github apps private key").Strings()
 		stateBackend                        = cmd.Flag("state-backend", "Backend to use for storing state").Required().String()
 		s3BackendBucket                     = cmd.Flag("s3-backend-bucket", "Bucket name to use for the S3 state backend").String()
 		rotationWindow                      = cmd.Flag("rotation-window", "A window in time (duration) where sidecred should rotate credentials prior to their expiration").Default("10m").Duration()
@@ -160,12 +160,22 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		}
 
 		if *githubDependabotStoreEnabled {
-			client, err := githubapp.NewClient(*githubDependabotStoreIntegrationID, []byte(*githubDependabotStorePrivateKey))
-			if err != nil {
-				logger.Fatal("initialize github dependabot store app", zap.Error(err))
+
+			integrationIDs := *githubDependabotStoreIntegrationID
+			privateKeys := *githubDependabotStorePrivateKey
+			multiApp := githubstore.MultiApp{}
+			for i := 0; i < len(integrationIDs); i++ {
+
+				client, err := githubapp.NewClient(integrationIDs[i], []byte(privateKeys[i]))
+				if err != nil {
+					logger.Fatal("initialize github dependabot store app", zap.Error(err))
+				}
+
+				multiApp = append(multiApp, githubapp.New(client))
 			}
+
 			stores = append(stores, githubstore.NewDependabotStore(
-				githubapp.New(client),
+				multiApp,
 				githubstore.WithSecretTemplate(*githubDependabotStoreSecretTemplate),
 			))
 		}
