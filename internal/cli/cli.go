@@ -61,8 +61,8 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		ssmStoreKMSKeyID                    = cmd.Flag("ssm-store-kms-key-id", "KMS key to use for encrypting secrets stored in SSM Parameter store").String()
 		githubStoreEnabled                  = cmd.Flag("github-store-enabled", "Enable Github repository secrets store").Bool()
 		githubStoreSecretTemplate           = cmd.Flag("github-store-secret-template", "Template to use for naming Github repository secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
-		githubStoreIntegrationID            = cmd.Flag("github-store-integration-id", "Github Apps integration ID").Int64()
-		githubStorePrivateKey               = cmd.Flag("github-store-private-key", "Github apps private key").String()
+		githubStoreIntegrationID            = cmd.Flag("github-store-integration-id", "Github Apps integration ID").Int64List()
+		githubStorePrivateKey               = cmd.Flag("github-store-private-key", "Github apps private key").Strings()
 		githubDependabotStoreEnabled        = cmd.Flag("github-dependabot-store-enabled", "Enable Github repository Dependabot secrets store").Bool()
 		githubDependabotStoreSecretTemplate = cmd.Flag("github-dependabot-store-secret-template", "Template to use for naming Github repository Dependabot secrets").Default("{{ .Namespace}}_{{ .Name }}").String()
 		githubDependabotStoreIntegrationID  = cmd.Flag("github-dependabot-store-integration-id", "Github Apps integration ID").Int64()
@@ -139,12 +139,22 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			))
 		}
 		if *githubStoreEnabled {
-			client, err := githubapp.NewClient(*githubStoreIntegrationID, []byte(*githubStorePrivateKey))
-			if err != nil {
-				logger.Fatal("initialize github store app", zap.Error(err))
+
+			integrationIDs := *githubStoreIntegrationID
+			privateKeys := *githubStorePrivateKey
+			multiApp := githubstore.MultiApp{}
+			for i := 0; i < len(integrationIDs); i++ {
+
+				client, err := githubapp.NewClient(integrationIDs[i], []byte(privateKeys[i]))
+				if err != nil {
+					logger.Fatal("initialize github store app", zap.Error(err))
+				}
+
+				multiApp = append(multiApp, githubapp.New(client))
 			}
+
 			stores = append(stores, githubstore.NewActionsStore(
-				githubapp.New(client),
+				multiApp,
 				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
 		}
