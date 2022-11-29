@@ -19,7 +19,6 @@ type App interface {
 type MultiApp []App
 
 func (apps MultiApp) CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
-
 	var err error
 	for _, app := range apps {
 
