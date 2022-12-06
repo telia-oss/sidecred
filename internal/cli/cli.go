@@ -145,6 +145,7 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			}
 			stores = append(stores, githubstore.NewActionsStore(
 				githubapp.New(client),
+				logger,
 				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
 		}
@@ -156,6 +157,7 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			}
 			stores = append(stores, githubstore.NewDependabotStore(
 				githubapp.New(client),
+				logger,
 				githubstore.WithSecretTemplate(*githubDependabotStoreSecretTemplate),
 			))
 		}
