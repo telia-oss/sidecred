@@ -15,6 +15,8 @@ import (
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/telia-oss/sidecred"
+
+	"go.uber.org/zap"
 )
 
 // illegalCharactersRegex matches characters that are not supported by Github,
@@ -71,6 +73,7 @@ type store struct {
 	keys                 map[string]*github.PublicKey
 	actionsClientFactory func(token string) ActionsAPI
 	secretTemplate       string
+	logger               *zap.Logger
 }
 
 // config that can be passed to the Configure method of this store.
@@ -90,6 +93,8 @@ func (s *store) Type() sidecred.StoreType {
 
 // Write implements sidecred.SecretStore.
 func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
+	log := s.logger.With(zap.String("namespace", namespace))
+	log.Debug("start Write")
 	c, err := s.parseConfig(config)
 	if err != nil {
 		return "", fmt.Errorf("parse config: %w", err)
@@ -98,6 +103,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	if err != nil {
 		return "", fmt.Errorf("build secret path: %w", err)
 	}
+	log.Debug("built secret template")
 	// TODO: Scope token to "secrets" once go-github supports it:
 	// https://developer.github.com/v3/apps/permissions/#permission-on-secrets
 	//
@@ -107,6 +113,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	if err != nil {
 		return "", fmt.Errorf("create secrets access token: %w", err)
 	}
+	log.Debug("created installation token")
 
 	if _, found := s.keys[c.RepositorySlug]; !found {
 		key, _, err := s.actionsClientFactory(token.GetToken()).GetRepoPublicKey(context.TODO(), c.owner, c.repository)
@@ -116,6 +123,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 		s.keys[c.RepositorySlug] = key
 	}
 	publicKey := s.keys[c.RepositorySlug]
+	log.Debug("set public key")
 
 	encryptedSecret, err := s.encryptSecretValue(secret, publicKey)
 	if err != nil {
@@ -134,6 +142,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 			EncryptedValue: encryptedSecret,
 		},
 	)
+	log.Debug("created or updated repo secret")
 	if err != nil {
 		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
 	}
