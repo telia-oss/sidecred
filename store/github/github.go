@@ -12,11 +12,10 @@ import (
 
 	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/telia-oss/sidecred"
-
-	"go.uber.org/zap"
 )
 
 // illegalCharactersRegex matches characters that are not supported by Github,
