@@ -42,6 +42,8 @@ func TestCLI(t *testing.T) {
 {"level":"info","msg":"starting sidecred","namespace":"example","requests":1}
 {"level":"info","msg":"processing request","namespace":"example","type":"random","store":"inprocess","name":"example-random-credential"}
 {"level":"info","msg":"created new credentials","namespace":"example","type":"random","store":"inprocess","count":1}
+{"level":"debug","msg":"start creds for-loop","namespace":"example","type":"random","store":"inprocess"}
+{"level":"debug","msg":"wrote to store","namespace":"example","type":"random","store":"inprocess","name":"example-random-credential"}
 {"level":"debug","msg":"stored credential","namespace":"example","type":"random","store":"inprocess","path":"example.example-random-credential"}
 {"level":"info","msg":"done processing","namespace":"example","type":"random","store":"inprocess"}
              `),
