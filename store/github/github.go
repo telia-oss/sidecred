@@ -24,7 +24,7 @@ import (
 var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // NewStore creates a new sidecred.SecretStore using Github repository secrets.
-func NewStore(app App, options ...Option) sidecred.SecretStore {
+func NewStore(app App, logger *zap.Logger, options ...Option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
 		keys:           make(map[string]*github.PublicKey),
@@ -32,6 +32,7 @@ func NewStore(app App, options ...Option) sidecred.SecretStore {
 		actionsClientFactory: func(token string) ActionsAPI {
 			return githubapp.NewInstallationClient(token).V3.Actions
 		},
+		logger: logger,
 	}
 	for _, optionFunc := range options {
 		optionFunc(s)
