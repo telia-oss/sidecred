@@ -11,7 +11,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/stretchr/testify v1.4.0
 	github.com/telia-oss/aws-env v1.0.2
-	github.com/telia-oss/githubapp v0.8.0
+	github.com/telia-oss/githubapp v0.7.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	sigs.k8s.io/yaml v1.1.0

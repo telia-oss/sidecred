@@ -4,7 +4,6 @@ package githubfakes
 import (
 	"sync"
 
-	githuba "github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"github.com/telia-oss/sidecred/store/github"
 )
@@ -24,20 +23,6 @@ type FakeApp struct {
 	createInstallationTokenReturnsOnCall map[int]struct {
 		result1 *githubapp.Token
 		result2 error
-	}
-	RateLimitsStub        func() (*githuba.RateLimits, *githuba.Response, error)
-	rateLimitsMutex       sync.RWMutex
-	rateLimitsArgsForCall []struct {
-	}
-	rateLimitsReturns struct {
-		result1 *githuba.RateLimits
-		result2 *githuba.Response
-		result3 error
-	}
-	rateLimitsReturnsOnCall map[int]struct {
-		result1 *githuba.RateLimits
-		result2 *githuba.Response
-		result3 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -114,72 +99,11 @@ func (fake *FakeApp) CreateInstallationTokenReturnsOnCall(i int, result1 *github
 	}{result1, result2}
 }
 
-func (fake *FakeApp) RateLimits() (*githuba.RateLimits, *githuba.Response, error) {
-	fake.rateLimitsMutex.Lock()
-	ret, specificReturn := fake.rateLimitsReturnsOnCall[len(fake.rateLimitsArgsForCall)]
-	fake.rateLimitsArgsForCall = append(fake.rateLimitsArgsForCall, struct {
-	}{})
-	stub := fake.RateLimitsStub
-	fakeReturns := fake.rateLimitsReturns
-	fake.recordInvocation("RateLimits", []interface{}{})
-	fake.rateLimitsMutex.Unlock()
-	if stub != nil {
-		return stub()
-	}
-	if specificReturn {
-		return ret.result1, ret.result2, ret.result3
-	}
-	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
-}
-
-func (fake *FakeApp) RateLimitsCallCount() int {
-	fake.rateLimitsMutex.RLock()
-	defer fake.rateLimitsMutex.RUnlock()
-	return len(fake.rateLimitsArgsForCall)
-}
-
-func (fake *FakeApp) RateLimitsCalls(stub func() (*githuba.RateLimits, *githuba.Response, error)) {
-	fake.rateLimitsMutex.Lock()
-	defer fake.rateLimitsMutex.Unlock()
-	fake.RateLimitsStub = stub
-}
-
-func (fake *FakeApp) RateLimitsReturns(result1 *githuba.RateLimits, result2 *githuba.Response, result3 error) {
-	fake.rateLimitsMutex.Lock()
-	defer fake.rateLimitsMutex.Unlock()
-	fake.RateLimitsStub = nil
-	fake.rateLimitsReturns = struct {
-		result1 *githuba.RateLimits
-		result2 *githuba.Response
-		result3 error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeApp) RateLimitsReturnsOnCall(i int, result1 *githuba.RateLimits, result2 *githuba.Response, result3 error) {
-	fake.rateLimitsMutex.Lock()
-	defer fake.rateLimitsMutex.Unlock()
-	fake.RateLimitsStub = nil
-	if fake.rateLimitsReturnsOnCall == nil {
-		fake.rateLimitsReturnsOnCall = make(map[int]struct {
-			result1 *githuba.RateLimits
-			result2 *githuba.Response
-			result3 error
-		})
-	}
-	fake.rateLimitsReturnsOnCall[i] = struct {
-		result1 *githuba.RateLimits
-		result2 *githuba.Response
-		result3 error
-	}{result1, result2, result3}
-}
-
 func (fake *FakeApp) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.createInstallationTokenMutex.RLock()
 	defer fake.createInstallationTokenMutex.RUnlock()
-	fake.rateLimitsMutex.RLock()
-	defer fake.rateLimitsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
