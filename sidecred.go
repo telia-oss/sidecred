@@ -356,14 +356,12 @@ RequestLoop:
 				continue CredentialLoop
 			}
 			log.Info("processing request", zap.String("name", r.Name))
-
 			for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
 				if r.hasValidCredentials(resource, s.rotationWindow) {
 					log.Info("found existing credentials", zap.String("name", r.Name))
 					continue CredentialLoop
 				}
 			}
-
 			creds, metadata, err := p.Create(r)
 			if err != nil {
 				log.Error("failed to provide credentials", zap.Error(err))
@@ -375,16 +373,14 @@ RequestLoop:
 			}
 			state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
 			log.Info("created new credentials", zap.Int("count", len(creds)))
-
 			var wg sync.WaitGroup
-			// Log the number of goroutines that will be created
 			log.Debug("creating", zap.Int("numGoroutines", len(creds)), zap.String("unit", "goroutines"))
-			for _, c := range creds {
+			for i, c := range creds {
 				wg.Add(1)
-				go func(c *Credential) {
+				go func(i int, c *Credential) {
 					defer wg.Done()
-
-					log.Debug("start creds for-loop")
+					log := log.With(zap.Int("goroutine", i))
+					log.Debug("start creds writing for-loop")
 					path, err := store.Write(config.Namespace(), c, storeConfig.Config)
 					if err != nil {
 						log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
@@ -393,10 +389,10 @@ RequestLoop:
 					log.Debug("wrote to store", zap.String("name", c.Name))
 					state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
 					log.Debug("stored credential", zap.String("path", path))
-				}(c)
+				}(i, c)
 			}
-
 			wg.Wait()
+
 
 			log.Info("done processing")
 		}
