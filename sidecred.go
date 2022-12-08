@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
-
+	"sync"
 	"go.uber.org/zap"
 )
 
@@ -376,17 +376,28 @@ RequestLoop:
 			state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
 			log.Info("created new credentials", zap.Int("count", len(creds)))
 
+			var wg sync.WaitGroup
+			// Log the number of goroutines that will be created
+			log.Debug("creating", zap.Int("numGoroutines", len(creds)), zap.String("unit", "goroutines"))
 			for _, c := range creds {
-				log.Debug("start creds for-loop")
-				path, err := store.Write(config.Namespace(), c, storeConfig.Config)
-				if err != nil {
-					log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
-					continue
-				}
-				log.Debug("wrote to store", zap.String("name", c.Name))
-				state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
-				log.Debug("stored credential", zap.String("path", path))
+				wg.Add(1)
+				go func(c *Credential) {
+					defer wg.Done()
+
+					log.Debug("start creds for-loop")
+					path, err := store.Write(config.Namespace(), c, storeConfig.Config)
+					if err != nil {
+						log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
+						return
+					}
+					log.Debug("wrote to store", zap.String("name", c.Name))
+					state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
+					log.Debug("stored credential", zap.String("path", path))
+				}(c)
 			}
+
+			wg.Wait()
+
 			log.Info("done processing")
 		}
 	}
