@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
-	"sync"
+
 	"go.uber.org/zap"
 )
 
@@ -325,78 +325,219 @@ func (s *Sidecred) Process(config Config, state *State) error {
 		return fmt.Errorf("invalid config: %s", err)
 	}
 
-RequestLoop:
+ 	// //RequestLoop:
+    // for _, request := range config.Requests() {
+    //     go func(req *CredentialsMap) {
+    //         var storeConfig *StoreConfig
+    //         for _, sc := range config.Stores() {
+    //             if sc.Alias() == request.Store {
+    //                 storeConfig = sc
+    //             }
+    //         }
+    //         if storeConfig == nil {
+    //             log.Warn("could not find config for store", zap.String("store", request.Store))
+    //             return
+    //         }
+    //         store, enabled := s.stores[storeConfig.Type]
+    //         if !enabled {
+    //             log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
+    //             return
+    //         }
+
+    //     CredentialLoop:
+    //         for _, r := range request.Credentials {
+    //             go func(r *CredentialRequest) {
+    //                 log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
+    //                 if r.Name == "" {
+    //                     log.Warn("missing name in request")
+    //                     return
+    //                 }
+    //                 p, ok := s.providers[r.Type.Provider()]
+    //                 if !ok {
+    //                     log.Warn("provider not configured")
+    //                     return
+    //                 }
+    //                 log.Info("processing request", zap.String("name", r.Name))
+
+    //                 for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
+    //                     if r.hasValidCredentials(resource, s.rotationWindow) {
+    //                         log.Info("found existing credentials", zap.String("name", r.Name))
+    //                         return
+    //                     }
+    //                 }
+
+    //                 creds, metadata, err := p.Create(r)
+    //                 if err != nil {
+    //                     log.Error("failed to provide credentials", zap.Error(err))
+    //                     return
+    //                 }
+    //                 if len(creds) == 0 {
+    //                     log.Error("no credentials returned by provider")
+    //                     return
+    //                 }
+    //                 state.AddResource(newResource(&r, storeConfig.Alias(), creds[0].Expiration, metadata))
+    //                 log.Info("created new credentials", zap.Int("count", len(creds)))
+
+    //                 for _, c := range creds {
+    //                     go func(c *Credential) {
+    //                         log.Debug("start creds for-loop")
+    //                         path, err := store.Write(config.Namespace(), c, storeConfig.Config)
+    //                         if err != nil {
+    //                             log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
+    //                             return
+    //                         }
+    //                         log.Debug("wrote to store", zap.String("name", c.Name))
+    //                         state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
+    //                         log.Debug("stored credential", zap.String("path", path))
+    //                     }(c)
+    //                 }
+    //                 log.Info("done processing")
+    //             }(r)
+	// 			continue CredentialLoop
+    //         }
+    //     }(request)
+    // }
+
+	// for _, request := range config.Requests() {
+	// 	go func(req *CredentialsMap) {
+	// 		var storeConfig *StoreConfig
+	// 		for _, sc := range config.Stores() {
+	// 			if sc.Alias() == request.Store {
+	// 				storeConfig = sc
+	// 			}
+	// 		}
+	// 		if storeConfig == nil {
+	// 			log.Warn("could not find config for store", zap.String("store", request.Store))
+	// 			return
+	// 		}
+	// 		store, enabled := s.stores[storeConfig.Type]
+	// 		if !enabled {
+	// 			log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
+	// 			return
+	// 		}
+	
+	// 		for _, r := range request.Credentials {
+	// 			go func(r *CredentialRequest) {
+	// 				log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
+	// 				if r.Name == "" {
+	// 					log.Warn("missing name in request")
+	// 					return
+	// 				}
+	// 				p, ok := s.providers[r.Type.Provider()]
+	// 				if !ok {
+	// 					log.Warn("provider not configured")
+	// 					return
+	// 				}
+	// 				log.Info("processing request", zap.String("name", r.Name))
+	
+	// 				for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
+	// 					if r.hasValidCredentials(resource, s.rotationWindow) {
+	// 						log.Info("found existing credentials", zap.String("name", r.Name))
+	// 						return
+	// 					}
+	// 				}
+	
+	// 				creds, metadata, err := p.Create(r)
+	// 				if err != nil {
+	// 					log.Error("failed to provide credentials", zap.Error(err))
+	// 					return
+	// 				}
+	// 				if len(creds) == 0 {
+	// 					log.Error("no credentials returned by provider")
+	// 					return
+	// 				}
+	// 				state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
+	// 				log.Info("created new credentials", zap.Int("count", len(creds)))
+	
+	// 				for _, c := range creds {
+	// 					go func(c *Credential) {
+	// 						log.Debug("start creds for-loop")
+	// 						path, err := store.Write(config.Namespace(), c, storeConfig.Config)
+	// 						if err != nil {
+	// 							log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
+	// 							return
+	// 						}
+	// 						log.Debug("wrote to store", zap.String("name", c.Name))
+	// 						state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
+	// 						log.Debug("stored credential", zap.String("path", path))
+	// 					}(c)
+	// 				}
+	// 				log.Info("done processing")
+	// 			}(r)
+	// 		}
+	// 	}(request)
+	// }
+	
 	for _, request := range config.Requests() {
-		var storeConfig *StoreConfig
-		for _, sc := range config.Stores() {
-			if sc.Alias() == request.Store {
-				storeConfig = sc
-			}
+        go func(req *CredentialsMap) {
+            var storeConfig *StoreConfig
+       		for _, sc := range config.Stores() {
+            if sc.Alias() == req.Store {
+                storeConfig = sc
+            }
 		}
-		if storeConfig == nil {
-			log.Warn("could not find config for store", zap.String("store", request.Store))
-			continue RequestLoop
-		}
-		store, enabled := s.stores[storeConfig.Type]
-		if !enabled {
-			log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
-			continue RequestLoop
-		}
+			if storeConfig == nil {
+                log.Warn("could not find config for store", zap.String("store", req.Store))
+                return
+            }
+            store, enabled := s.stores[storeConfig.Type]
+            if !enabled {
+                log.Warn("store type is not enabled", zap.String("storeType", string(storeConfig.Type)))
+                return
+            }
 
-	CredentialLoop:
-		for _, r := range request.Credentials {
-			log := log.With(zap.String("type", string(r.Type)), zap.String("store", request.Store))
-			if r.Name == "" {
-				log.Warn("missing name in request")
-				continue CredentialLoop
-			}
-			p, ok := s.providers[r.Type.Provider()]
-			if !ok {
-				log.Warn("provider not configured")
-				continue CredentialLoop
-			}
-			log.Info("processing request", zap.String("name", r.Name))
-			for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
-				if r.hasValidCredentials(resource, s.rotationWindow) {
-					log.Info("found existing credentials", zap.String("name", r.Name))
-					continue CredentialLoop
-				}
-			}
-			creds, metadata, err := p.Create(r)
-			if err != nil {
-				log.Error("failed to provide credentials", zap.Error(err))
-				continue CredentialLoop
-			}
-			if len(creds) == 0 {
-				log.Error("no credentials returned by provider")
-				continue CredentialLoop
-			}
-			state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
-			log.Info("created new credentials", zap.Int("count", len(creds)))
-			var wg sync.WaitGroup
-			log.Debug("creating", zap.Int("numGoroutines", len(creds)), zap.String("unit", "goroutines"))
-			for i, c := range creds {
-				wg.Add(1)
-				go func(i int, c *Credential) {
-					defer wg.Done()
-					log := log.With(zap.Int("goroutine", i))
-					log.Debug("start creds writing for-loop")
-					path, err := store.Write(config.Namespace(), c, storeConfig.Config)
-					if err != nil {
-						log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
-						return
-					}
-					log.Debug("wrote to store", zap.String("name", c.Name))
-					state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
-					log.Debug("stored credential", zap.String("path", path))
-				}(i, c)
-			}
-			wg.Wait()
+            for _, r := range req.Credentials {
+                go func(r *CredentialRequest) {
+                    log := log.With(zap.String("type", string(r.Type)), zap.String("store", req.Store))
+                    if r.Name == "" {
+                        log.Warn("missing name in request")
+                        return
+                    }
+                    p, ok := s.providers[r.Type.Provider()]
+                    if !ok {
+                        log.Warn("provider not configured")
+                        return
+                    }
+                    log.Info("processing request", zap.String("name", r.Name))
 
+                    for _, resource := range state.GetResourcesByID(r.Type, r.Name, storeConfig.Alias()) {
+                        if r.hasValidCredentials(resource, s.rotationWindow) {
+                            log.Info("found existing credentials", zap.String("name", r.Name))
+                            return
+                        }
+                    }
 
-			log.Info("done processing")
-		}
-	}
+                    creds, metadata, err := p.Create(r)
+                    if err != nil {
+                        log.Error("failed to provide credentials", zap.Error(err))
+                        return
+                    }
+                    if len(creds) == 0 {
+                        log.Error("no credentials returned by provider")
+                        return
+                    }
+                    state.AddResource(newResource(r, storeConfig.Alias(), creds[0].Expiration, metadata))
+                    log.Info("created new credentials", zap.Int("count", len(creds)))
+
+                    for _, c := range creds {
+                        go func(c *Credential) {
+                            log.Debug("start creds for-loop")
+                            path, err := store.Write(config.Namespace(), c, storeConfig.Config)
+                            if err != nil {
+                                log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
+                                return
+                            }
+                            log.Debug("wrote to store", zap.String("name", c.Name))
+                            state.AddSecret(storeConfig, newSecret(r.Name, path, c.Expiration))
+                            log.Debug("stored credential", zap.String("path", path))
+                        }(c)
+                    }
+                    log.Info("done processing")
+                }(r)
+            }
+        }(request)
+    }
+
 
 	for _, ps := range state.Providers {
 		// Reverse loop to handle index changes due to deleting items in the
