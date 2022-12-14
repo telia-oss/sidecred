@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -11,13 +10,13 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/backend/file"
 	"github.com/telia-oss/sidecred/backend/s3"
+	"github.com/telia-oss/sidecred/githubrotator"
 	"github.com/telia-oss/sidecred/provider/artifactory"
 	"github.com/telia-oss/sidecred/provider/github"
 	"github.com/telia-oss/sidecred/provider/random"
@@ -100,30 +99,13 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			))
 		}
 		if *githubProviderEnabled {
-			var (
-				integrationIDs = strings.Split(*githubProviderIntegrationID, ",")
-				privateKeys    = strings.Split(*githubProviderPrivateKey, ",")
-			)
-
-			multiApp := githubstore.MultiApp{}
-			for i := 0; i < len(integrationIDs); i++ {
-
-				integrationID, err := strconv.ParseInt(integrationIDs[i], 10, 64)
-				if err != nil {
-					logger.Fatal("initialize github store integration id", zap.Error(err))
-				}
-
-				client, err := githubapp.NewClient(integrationID, []byte(privateKeys[i]))
-				if err != nil {
-					logger.Fatal("initialize github store app", zap.Error(err))
-				}
-				logger.Info("add github provider client", zap.Int64("integration_id", integrationID))
-
-				multiApp = append(multiApp, githubapp.New(client))
-			}
 
 			providers = append(providers, github.New(
-				multiApp,
+				githubrotator.New(githubrotator.Config{
+					IntegrationIDs: strings.Split(*githubProviderIntegrationID, ","),
+					PrivateKeys:    strings.Split(*githubProviderPrivateKey, ","),
+					Logger:         logger,
+				}),
 				github.WithDeployKeyRotationInterval(*githubProviderKeyRotationInterval),
 			))
 		}
@@ -159,60 +141,26 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			))
 		}
 		if *githubStoreEnabled {
-			var (
-				integrationIDs = strings.Split(*githubStoreIntegrationID, ",")
-				privateKeys    = strings.Split(*githubStorePrivateKey, ",")
-			)
-
-			multiApp := githubstore.MultiApp{}
-			for i := 0; i < len(integrationIDs); i++ {
-
-				integrationID, err := strconv.ParseInt(integrationIDs[i], 10, 64)
-				if err != nil {
-					logger.Fatal("initialize github store integration id", zap.Error(err))
-				}
-
-				client, err := githubapp.NewClient(integrationID, []byte(privateKeys[i]))
-				if err != nil {
-					logger.Fatal("initialize github store app", zap.Error(err))
-				}
-				logger.Info("add github store client", zap.Int64("integration_id", integrationID))
-
-				multiApp = append(multiApp, githubapp.New(client))
-			}
 
 			stores = append(stores, githubstore.NewActionsStore(
-				multiApp,
+				githubrotator.New(githubrotator.Config{
+					IntegrationIDs: strings.Split(*githubStoreIntegrationID, ","),
+					PrivateKeys:    strings.Split(*githubStorePrivateKey, ","),
+					Logger:         logger,
+				}),
 				logger,
 				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
 		}
 
 		if *githubDependabotStoreEnabled {
-			var (
-				integrationIDs = strings.Split(*githubDependabotStoreIntegrationID, ",")
-				privateKeys    = strings.Split(*githubDependabotStorePrivateKey, ",")
-			)
-
-			multiApp := githubstore.MultiApp{}
-			for i := 0; i < len(integrationIDs); i++ {
-
-				integrationID, err := strconv.ParseInt(integrationIDs[i], 10, 64)
-				if err != nil {
-					logger.Fatal("initialize dependabot store integration id", zap.Error(err))
-				}
-
-				client, err := githubapp.NewClient(integrationID, []byte(privateKeys[i]))
-				if err != nil {
-					logger.Fatal("initialize github dependabot store app", zap.Error(err))
-				}
-				logger.Info("add github dependabot store client", zap.Int64("integration_id", integrationID))
-
-				multiApp = append(multiApp, githubapp.New(client))
-			}
 
 			stores = append(stores, githubstore.NewDependabotStore(
-				multiApp,
+				githubrotator.New(githubrotator.Config{
+					IntegrationIDs: strings.Split(*githubDependabotStoreIntegrationID, ","),
+					PrivateKeys:    strings.Split(*githubDependabotStorePrivateKey, ","),
+					Logger:         logger,
+				}),
 				logger,
 				githubstore.WithSecretTemplate(*githubDependabotStoreSecretTemplate),
 			))
