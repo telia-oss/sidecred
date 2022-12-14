@@ -32,7 +32,7 @@ type app struct {
 }
 
 func (app app) hasZeroRateLimit() bool {
-	return app.rateLimitError != nil && app.rateLimitError.Rate.Reset.Sub(time.Now()).Seconds() <= 0
+	return app.rateLimitError != nil && app.rateLimitError.Rate.Reset.Sub(time.Now()).Seconds() <= 0 //nolint:gosimple,gocritic
 }
 
 func (app app) hasValidToken() bool {
@@ -46,7 +46,6 @@ type Rotator struct {
 }
 
 func (r *Rotator) CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
-
 	if r.apps[0].hasValidToken() {
 		r.logger.Debug("retrieving rate limits for token",
 			zap.String("app", r.apps[0].integrationID))
@@ -78,7 +77,7 @@ func (r *Rotator) CreateInstallationToken(owner string, repositories []string, p
 }
 
 func hasTokenExpired(token *githubapp.Token) bool {
-	return token.ExpiresAt.Sub(time.Now()).Seconds() <= 0
+	return token.ExpiresAt.Sub(time.Now()).Seconds() <= 0 //nolint:gosimple,gocritic
 }
 
 func (r *Rotator) createInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
@@ -129,7 +128,6 @@ func (r *Rotator) createInstallationToken(owner string, repositories []string, p
 }
 
 func (r *Rotator) rotate() {
-
 	tmp := r.apps[0]
 	for i := 0; i < (len(r.apps) - 1); i++ {
 		r.apps[i] = r.apps[i+1]
@@ -137,8 +135,7 @@ func (r *Rotator) rotate() {
 	r.apps[len(r.apps)-1] = tmp
 }
 
-func New(config Config) *Rotator {
-
+func New(config *Config) *Rotator {
 	if config.OptRateLimitClient == nil {
 		config.OptRateLimitClient = defaultRateLimitClient{}
 	}

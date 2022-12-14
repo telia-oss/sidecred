@@ -6,19 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/telia-oss/sidecred/githubrotator"
-	"github.com/telia-oss/sidecred/githubrotator/fakes"
-
 	"github.com/google/go-github/v45/github"
 	. "github.com/onsi/gomega"
 	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
+
+	"github.com/telia-oss/sidecred/githubrotator"
+	"github.com/telia-oss/sidecred/githubrotator/fakes"
 )
 
 var (
 	tA        = "a"
 	tB        = "b"
-	yesterday = time.Now().AddDate(0, 0, -1)
 	tomorrow  = time.Now().AddDate(0, 0, 1)
 	timestamp = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 )
@@ -28,10 +27,7 @@ var (
 	errorRateLimit  = &github.RateLimitError{Rate: github.Rate{Limit: 1, Remaining: 1, Reset: github.Timestamp{Time: timestamp}}}
 	rateLimitsAbove = &github.RateLimits{Core: &github.Rate{Limit: 50, Remaining: 51}}
 	rateLimitsBelow = &github.RateLimits{Core: &github.Rate{Limit: 50, Remaining: 49}}
-	rateLimitsEmpty = &github.RateLimits{}
 	responseEmpty   = &github.Response{}
-	tokenEmpty      = &githubapp.Token{}
-	tokenExpired    = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tA, ExpiresAt: &yesterday}}
 	tokenA          = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tA, ExpiresAt: &tomorrow}}
 	tokenB          = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tB, ExpiresAt: &tomorrow}}
 )
@@ -61,7 +57,7 @@ func TestRotator_CreateInstallationToken(t *testing.T) {
 		}),
 	})
 
-	rotator := githubrotator.New(githubrotator.Config{
+	rotator := githubrotator.New(&githubrotator.Config{
 		IntegrationIDs:     []string{"App0", "App1", "App2"},
 		PrivateKeys:        []string{"Key0", "Key1", "Key2"},
 		Logger:             logger,
@@ -98,7 +94,6 @@ type fakeAppResults struct {
 }
 
 func returnsApp(res map[int]fakeAppResults) fakeAppFactoryResults {
-
 	fakeApp := &fakes.FakeApp{}
 	for i, r := range res {
 		fakeApp.CreateInstallationTokenReturnsOnCall(i, r.result1, r.result2)
@@ -113,7 +108,6 @@ type fakeAppFactoryResults struct {
 }
 
 func returnsAppFactory(res map[int]fakeAppFactoryResults) *fakes.FakeAppFactory {
-
 	fake := &fakes.FakeAppFactory{}
 	for i, r := range res {
 		fake.CreateReturnsOnCall(i, r.result1, r.result2)
@@ -129,7 +123,6 @@ type fakeRateLimitsResults struct {
 }
 
 func returnsRateLimits(res map[int]fakeRateLimitsResults) *fakes.FakeRateLimits {
-
 	fake := &fakes.FakeRateLimits{}
 	for i, r := range res {
 		fake.GetTokenRateLimitsReturnsOnCall(i, r.result1, r.result2, r.result3)

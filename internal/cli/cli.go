@@ -99,9 +99,8 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			))
 		}
 		if *githubProviderEnabled {
-
 			providers = append(providers, github.New(
-				githubrotator.New(githubrotator.Config{
+				githubrotator.New(&githubrotator.Config{
 					IntegrationIDs: strings.Split(*githubProviderIntegrationID, ","),
 					PrivateKeys:    strings.Split(*githubProviderPrivateKey, ","),
 					Logger:         logger,
@@ -141,9 +140,8 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			))
 		}
 		if *githubStoreEnabled {
-
 			stores = append(stores, githubstore.NewActionsStore(
-				githubrotator.New(githubrotator.Config{
+				githubrotator.New(&githubrotator.Config{
 					IntegrationIDs: strings.Split(*githubStoreIntegrationID, ","),
 					PrivateKeys:    strings.Split(*githubStorePrivateKey, ","),
 					Logger:         logger,
@@ -154,9 +152,8 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 		}
 
 		if *githubDependabotStoreEnabled {
-
 			stores = append(stores, githubstore.NewDependabotStore(
-				githubrotator.New(githubrotator.Config{
+				githubrotator.New(&githubrotator.Config{
 					IntegrationIDs: strings.Split(*githubDependabotStoreIntegrationID, ","),
 					PrivateKeys:    strings.Split(*githubDependabotStorePrivateKey, ","),
 					Logger:         logger,

@@ -29,7 +29,6 @@ type RateLimits interface {
 type defaultAppFactory struct{}
 
 func (defaultAppFactory) Create(integrationID, privateKey string) (App, error) {
-
 	intIntegrationID, err := strconv.ParseInt(integrationID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("")
