@@ -66,7 +66,6 @@ func (r *Rotator) CreateInstallationToken(owner string, repositories []string, p
 				zap.String("rate_limit_reset", rateLimits.Core.Reset.String()),
 				zap.String("app", r.apps[0].integrationID))
 
-			return r.apps[0].token, nil
 		case rateLimits.Core.Remaining < defaultRateLimitCutoff:
 			r.logger.Debug("rate limits below cutoff",
 				zap.Int("rate_limit_max", rateLimits.Core.Limit),
