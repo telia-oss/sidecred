@@ -60,14 +60,18 @@ func (r *Rotator) CreateInstallationToken(owner string, repositories []string, p
 			return nil, fmt.Errorf("unexpected error getting rate limits (app='%s'): %w", r.apps[0].integrationID, err)
 		case rateLimits.Core.Remaining >= defaultRateLimitCutoff:
 			r.logger.Debug("rate limits above cutoff",
-				zap.String("app", r.apps[0].integrationID),
-				zap.Int("rate_limit_remaining", rateLimits.Core.Remaining))
+				zap.Int("rate_limit_max", rateLimits.Core.Limit),
+				zap.Int("rate_limit_remaining", rateLimits.Core.Remaining),
+				zap.String("rate_limit_reset", rateLimits.Core.Reset.String()),
+				zap.String("app", r.apps[0].integrationID))
 
 			return r.apps[0].token, nil
 		case rateLimits.Core.Remaining < defaultRateLimitCutoff:
 			r.logger.Debug("rate limits below cutoff",
-				zap.String("app", r.apps[0].integrationID),
-				zap.Int("rate_limit_remaining", rateLimits.Core.Remaining))
+				zap.Int("rate_limit_max", rateLimits.Core.Limit),
+				zap.Int("rate_limit_remaining", rateLimits.Core.Remaining),
+				zap.String("rate_limit_reset", rateLimits.Core.Reset.String()),
+				zap.String("app", r.apps[0].integrationID))
 
 			r.rotate()
 		}
@@ -103,6 +107,9 @@ func (r *Rotator) createInstallationToken(owner string, repositories []string, p
 		switch {
 		case errors.As(err, &rateLimitError):
 			r.logger.Debug("rate limit error",
+				zap.Int("rate_limit_max", rateLimitError.Rate.Limit),
+				zap.Int("rate_limit_remaining", rateLimitError.Rate.Remaining),
+				zap.String("rate_limit_reset", rateLimitError.Rate.Reset.String()),
 				zap.String("app", r.apps[0].integrationID))
 
 			r.apps[0].rateLimitError = rateLimitError
