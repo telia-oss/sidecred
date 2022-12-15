@@ -18,6 +18,7 @@ import (
 var (
 	tA        = "a"
 	tB        = "b"
+	tC        = "c"
 	tomorrow  = time.Now().AddDate(0, 0, 1)
 	timestamp = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 )
@@ -30,6 +31,7 @@ var (
 	responseEmpty   = &github.Response{}
 	tokenA          = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tA, ExpiresAt: &tomorrow}}
 	tokenB          = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tB, ExpiresAt: &tomorrow}}
+	tokenC          = &githubapp.Token{InstallationToken: &github.InstallationToken{Token: &tC, ExpiresAt: &tomorrow}}
 )
 
 func TestRotator_CreateInstallationToken(t *testing.T) {
@@ -51,6 +53,7 @@ func TestRotator_CreateInstallationToken(t *testing.T) {
 		1: returnsApp(map[int]fakeAppResults{
 			0: {nil, errorUnexpected},
 			1: {tokenB, nil},
+			2: {tokenC, nil},
 		}),
 		2: returnsApp(map[int]fakeAppResults{
 			0: {tokenA, nil},
@@ -82,9 +85,9 @@ func TestRotator_CreateInstallationToken(t *testing.T) {
 	assert.Expect(token).To(BeNil())
 	assert.Expect(err).To(HaveOccurred())
 
-	// tokenB GetTokenRateLimits called, returns rate limit above cutoff, returns tokenB
+	// tokenB GetTokenRateLimits called, returns rate limit above cutoff, returns tokenC
 	token, err = rotator.CreateInstallationToken("telia-oss", []string{"sidecred"}, nil)
-	assert.Expect(token).To(Equal(tokenB))
+	assert.Expect(token).To(Equal(tokenC))
 	assert.Expect(err).To(BeNil())
 }
 
