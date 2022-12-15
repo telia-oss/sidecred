@@ -48,6 +48,7 @@ type Rotator struct {
 func (r *Rotator) CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
 	if r.apps[0].hasValidToken() {
 		r.logger.Debug("retrieving rate limits for token",
+			zap.String("token_expires_at", r.apps[0].token.ExpiresAt.String()),
 			zap.String("app", r.apps[0].integrationID))
 
 		rateLimits, _, err := r.rateLimitClient.GetTokenRateLimits(context.TODO(), r.apps[0].token.GetToken())
@@ -81,7 +82,7 @@ func (r *Rotator) CreateInstallationToken(owner string, repositories []string, p
 }
 
 func hasTokenExpired(token *githubapp.Token) bool {
-	return token.ExpiresAt.Sub(time.Now()).Seconds() <= 0 //nolint:gosimple,gocritic
+	return token.ExpiresAt.Sub(time.Now()).Seconds() <= 5 //nolint:gosimple,gocritic
 }
 
 func (r *Rotator) createInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
@@ -112,6 +113,7 @@ func (r *Rotator) createInstallationToken(owner string, repositories []string, p
 				zap.String("rate_limit_reset", rateLimitError.Rate.Reset.String()),
 				zap.String("app", r.apps[0].integrationID))
 
+			r.apps[0].token = nil
 			r.apps[0].rateLimitError = rateLimitError
 			r.rotate()
 		case err != nil:
@@ -119,9 +121,12 @@ func (r *Rotator) createInstallationToken(owner string, repositories []string, p
 				zap.String("app", r.apps[0].integrationID),
 				zap.Error(err))
 
+			r.apps[0].token = nil
+			r.apps[0].rateLimitError = nil
 			r.rotate()
 		default:
 			r.logger.Debug("found token",
+				zap.String("token_expires_at", token.ExpiresAt.String()),
 				zap.String("app", r.apps[0].integrationID))
 
 			r.apps[0].token = token
