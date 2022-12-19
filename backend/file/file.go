@@ -2,6 +2,7 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,7 +18,7 @@ func New() sidecred.StateBackend {
 type fileStateBackend struct{}
 
 // Load implements sidecred.StateBackend.
-func (b *fileStateBackend) Load(file string) (*sidecred.State, error) {
+func (b *fileStateBackend) Load(ctx context.Context, file string) (*sidecred.State, error) {
 	if err := b.createFileIfNotExists(file); err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (b *fileStateBackend) Load(file string) (*sidecred.State, error) {
 }
 
 // Save implements sidecred.StateBackend.
-func (b *fileStateBackend) Save(file string, state *sidecred.State) error {
+func (b *fileStateBackend) Save(ctx context.Context, file string, state *sidecred.State) error {
 	if err := b.createFileIfNotExists(file); err != nil {
 		return err
 	}

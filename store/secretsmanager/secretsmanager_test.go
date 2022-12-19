@@ -1,6 +1,7 @@
 package secretsmanager_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -89,7 +90,7 @@ func TestWrite(t *testing.T) {
 			client.UpdateSecretReturns(nil, tc.updateError)
 
 			store := secretstore.New(client, secretstore.WithSecretTemplate(tc.secretTemplate))
-			path, err := store.Write(teamName, secret, tc.config)
+			path, err := store.Write(context.TODO(), teamName, secret, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.secretPath, path)
@@ -144,7 +145,7 @@ func TestRead(t *testing.T) {
 			client.GetSecretValueReturns(tc.getSecretOutput, tc.getSecretError)
 
 			store := secretstore.New(client)
-			secret, found, err := store.Read(tc.secretPath, nil)
+			secret, found, err := store.Read(context.TODO(), tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectFound, found)
@@ -187,7 +188,7 @@ func TestDelete(t *testing.T) {
 			client.DeleteSecretReturns(nil, tc.deleteSecretError)
 
 			store := secretstore.New(client)
-			err := store.Delete(tc.secretPath, nil)
+			err := store.Delete(context.TODO(), tc.secretPath, nil)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, 1, client.DeleteSecretCallCount())

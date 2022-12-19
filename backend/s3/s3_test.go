@@ -1,6 +1,7 @@
 package s3_test
 
 import (
+	"context"
 	"io"
 	"strings"
 	"testing"
@@ -29,7 +30,7 @@ func TestS3Backend(t *testing.T) {
 			fakeS3.GetObjectReturns(&s3.GetObjectOutput{Body: io.NopCloser(strings.NewReader("{}"))}, nil)
 
 			b := backend.New(fakeS3, "bucket")
-			state, err := b.Load("key")
+			state, err := b.Load(context.TODO(), "key")
 			require.NoError(t, err)
 			assert.Equal(t, &sidecred.State{}, state)
 		})

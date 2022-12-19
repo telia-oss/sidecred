@@ -3,6 +3,7 @@ package secretsmanager
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,7 +58,7 @@ func (s *store) Type() sidecred.StoreType {
 }
 
 // Write implements sidecred.SecretStore.
-func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
+func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
 		return "", fmt.Errorf("parse config: %s", err)
@@ -96,7 +97,7 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 }
 
 // Read implements sidecred.SecretStore.
-func (s *store) Read(path string, _ json.RawMessage) (string, bool, error) {
+func (s *store) Read(ctx context.Context, path string, _ json.RawMessage) (string, bool, error) {
 	out, err := s.client.GetSecretValue(&secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(path),
 	})
@@ -115,7 +116,7 @@ func (s *store) Read(path string, _ json.RawMessage) (string, bool, error) {
 }
 
 // Delete implements sidecred.SecretStore.
-func (s *store) Delete(path string, _ json.RawMessage) error {
+func (s *store) Delete(ctx context.Context, path string, _ json.RawMessage) error {
 	_, err := s.client.DeleteSecret(&secretsmanager.DeleteSecretInput{
 		SecretId:                   aws.String(path),
 		ForceDeleteWithoutRecovery: aws.Bool(true),

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -42,6 +43,8 @@ func main() {
 
 func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
+		ctx := context.Background()
+
 		b, err := os.ReadFile(*cfg)
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
@@ -50,14 +53,14 @@ func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBack
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %s", err)
 		}
-		state, err := backend.Load(*statePath)
+		state, err := backend.Load(ctx, *statePath)
 		if err != nil {
 			return fmt.Errorf("failed to load state: %s", err)
 		}
-		if err := s.Process(cfg, state); err != nil {
+		if err := s.Process(ctx, cfg, state); err != nil {
 			return err
 		}
-		if err := backend.Save(*statePath, state); err != nil {
+		if err := backend.Save(ctx, *statePath, state); err != nil {
 			return fmt.Errorf("failed to save state: %s", err)
 		}
 		return nil

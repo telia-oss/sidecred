@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -83,7 +84,7 @@ requests:
 				if err != nil {
 					return fmt.Errorf("failed to parse config: %s", err)
 				}
-				return s.Process(c, &sidecred.State{})
+				return s.Process(context.TODO(), c, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)

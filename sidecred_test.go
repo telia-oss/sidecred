@@ -1,6 +1,7 @@
 package sidecred_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -333,7 +334,7 @@ requests:
 			cfg, err := config.Parse([]byte(tc.config))
 			require.NoError(t, err)
 
-			err = s.Process(cfg, state)
+			err = s.Process(context.TODO(), cfg, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedCreateCalls, provider.CreateCallCount(), "create calls")
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
@@ -343,7 +344,7 @@ requests:
 			}
 
 			for k, v := range tc.expectedSecrets {
-				value, found, err := store.Read(k, []byte("{}"))
+				value, found, err := store.Read(context.TODO(), k, []byte("{}"))
 				assert.NoError(t, err)
 				assert.True(t, found, "secret exists")
 				assert.Equal(t, v, value)
@@ -434,7 +435,7 @@ stores:
 			cfg, err := config.Parse([]byte(tc.config))
 			require.NoError(t, err)
 
-			err = s.Process(cfg, state)
+			err = s.Process(context.TODO(), cfg, state)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedDestroyCalls, provider.DestroyCallCount(), "destroy calls")
 
@@ -467,7 +468,7 @@ func (f *fakeProvider) Type() sidecred.ProviderType {
 	return sidecred.Random
 }
 
-func (f *fakeProvider) Create(_ *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (f *fakeProvider) Create(_ context.Context, _ *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	f.createCallCount++
 	return []*sidecred.Credential{{
 			Name:       "fake-credential",
@@ -478,7 +479,7 @@ func (f *fakeProvider) Create(_ *sidecred.CredentialRequest) ([]*sidecred.Creden
 		nil
 }
 
-func (f *fakeProvider) Destroy(_ *sidecred.Resource) error {
+func (f *fakeProvider) Destroy(_ context.Context, _ *sidecred.Resource) error {
 	f.destroyCallCount++
 	return nil
 }

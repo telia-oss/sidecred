@@ -2,6 +2,7 @@
 package random
 
 import (
+	"context"
 	"math/rand"
 	"time"
 
@@ -54,7 +55,7 @@ func (p *provider) Type() sidecred.ProviderType {
 }
 
 // Create implements sidecred.Provider.
-func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) Create(ctx context.Context, request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c RequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
@@ -74,6 +75,6 @@ func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Cred
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(_ *sidecred.Resource) error {
+func (p *provider) Destroy(_ context.Context, _ *sidecred.Resource) error {
 	return nil
 }

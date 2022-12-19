@@ -1,6 +1,7 @@
 package sts_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -82,7 +83,7 @@ func TestSTSProvider(t *testing.T) {
 				provider.WithExternalID(tc.externalID),
 			)
 
-			creds, metadata, err := p.Create(tc.request)
+			creds, metadata, err := p.Create(context.TODO(), tc.request)
 			require.NoError(t, err)
 			require.Equal(t, 1, fakeSTSAPI.AssumeRoleCallCount())
 			require.Len(t, creds, len(expectedCredentials))

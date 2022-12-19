@@ -1,6 +1,7 @@
 package random_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func TestRandomProvider(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			p := provider.New(tc.seed)
 
-			creds, metadata, err := p.Create(tc.request)
+			creds, metadata, err := p.Create(context.TODO(), tc.request)
 			require.NoError(t, err)
 			require.Len(t, creds, len(tc.expected))
 			assert.Nil(t, metadata)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -54,18 +55,20 @@ type Event struct {
 func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
 	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
 		lambda.Start(func(event Event) error {
-			cfg, err := loadConfig(*configBucket, event.ConfigPath)
+			ctx := context.Background() // NOTE: change to function arg later.
+
+			cfg, err := loadConfig(ctx, *configBucket, event.ConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %s", err)
 			}
-			state, err := backend.Load(event.StatePath)
+			state, err := backend.Load(ctx, event.StatePath)
 			if err != nil {
 				return fmt.Errorf("failed to load state: %s", err)
 			}
-			if err := s.Process(cfg, state); err != nil {
+			if err := s.Process(ctx, cfg, state); err != nil {
 				return err
 			}
-			if err := backend.Save(event.StatePath, state); err != nil {
+			if err := backend.Save(ctx, event.StatePath, state); err != nil {
 				return fmt.Errorf("failed to save state: %s", err)
 			}
 			return nil
@@ -74,7 +77,7 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 	}
 }
 
-func loadConfig(bucket, key string) (sidecred.Config, error) {
+func loadConfig(ctx context.Context, bucket, key string) (sidecred.Config, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, err

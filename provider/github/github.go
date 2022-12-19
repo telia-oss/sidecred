@@ -115,18 +115,18 @@ func (p *provider) Type() sidecred.ProviderType {
 }
 
 // Create implements sidecred.Provider.
-func (p *provider) Create(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) Create(ctx context.Context, request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	switch request.Type {
 	case sidecred.GithubDeployKey:
-		return p.createDeployKey(request)
+		return p.createDeployKey(ctx, request)
 	case sidecred.GithubAccessToken:
-		return p.createAccessToken(request)
+		return p.createAccessToken(ctx, request)
 	default:
 		return nil, nil, fmt.Errorf("invalid request: %s", request.Type)
 	}
 }
 
-func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) createAccessToken(ctx context.Context, request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c AccessTokenRequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
@@ -153,7 +153,7 @@ func (p *provider) createAccessToken(request *sidecred.CredentialRequest) ([]*si
 	}}, nil, nil
 }
 
-func (p *provider) createDeployKey(request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
+func (p *provider) createDeployKey(ctx context.Context, request *sidecred.CredentialRequest) ([]*sidecred.Credential, *sidecred.Metadata, error) {
 	var c DeployKeyRequestConfig
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
@@ -170,7 +170,7 @@ func (p *provider) createDeployKey(request *sidecred.CredentialRequest) ([]*side
 		return nil, nil, fmt.Errorf("generate key pair: %s", err)
 	}
 
-	key, _, err := p.reposClientFactory(token.GetToken()).CreateKey(context.TODO(), c.Owner, c.Repository, &github.Key{
+	key, _, err := p.reposClientFactory(token.GetToken()).CreateKey(ctx, c.Owner, c.Repository, &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
@@ -210,7 +210,7 @@ func (p *provider) generateKeyPair() (string, string, error) {
 }
 
 // Destroy implements sidecred.Provider.
-func (p *provider) Destroy(resource *sidecred.Resource) error {
+func (p *provider) Destroy(ctx context.Context, resource *sidecred.Resource) error {
 	var c DeployKeyRequestConfig
 	if err := json.Unmarshal(resource.Config, &c); err != nil {
 		return fmt.Errorf("unmarshal resource config: %s", err)
@@ -232,7 +232,7 @@ func (p *provider) Destroy(resource *sidecred.Resource) error {
 	if err != nil {
 		return fmt.Errorf("create administrator access token: %s", err)
 	}
-	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(context.TODO(), c.Owner, c.Repository, keyID)
+	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(ctx, c.Owner, c.Repository, keyID)
 	if err != nil {
 		// Ignore error if status code is 404 (key not found)
 		if resp == nil || resp.StatusCode != 404 {

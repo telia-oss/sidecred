@@ -1,6 +1,7 @@
 package github_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -65,7 +66,7 @@ func TestWrite(t *testing.T) {
 					return fakeActionsAPI
 				}),
 			)
-			path, err := store.Write(teamName, secret, tc.config)
+			path, err := store.Write(context.TODO(), teamName, secret, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.secretPath, path)
@@ -111,7 +112,7 @@ func TestRead(t *testing.T) {
 					return fakeActionsAPI
 				}),
 			)
-			secret, found, err := store.Read(tc.secretPath, tc.config)
+			secret, found, err := store.Read(context.TODO(), tc.secretPath, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectFound, found)
@@ -151,7 +152,7 @@ func TestDelete(t *testing.T) {
 					return fakeActionsAPI
 				}),
 			)
-			err := store.Delete(tc.secretPath, tc.config)
+			err := store.Delete(context.TODO(), tc.secretPath, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, 1, fakeActionsAPI.DeleteRepoSecretCallCount())

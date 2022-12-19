@@ -1,6 +1,7 @@
 package sidecred
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"time"
@@ -9,10 +10,10 @@ import (
 // StateBackend is implemented by things that know how to store sidecred.State.
 type StateBackend interface {
 	// Load state from the backend. If no state exists it should be created.
-	Load(path string) (*State, error)
+	Load(ctx context.Context, path string) (*State, error)
 
 	// Save a state to the backend.
-	Save(path string, state *State) error
+	Save(ctx context.Context, path string, state *State) error
 }
 
 // NewState returns a new sidecred.State.
