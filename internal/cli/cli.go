@@ -30,7 +30,7 @@ import (
 // Type definitions that allow us to reuse the CLI (flags and setup) between binaries, and
 // also so we can pass in test fakes during testing.
 type (
-	runFunc          func(*sidecred.Sidecred, sidecred.StateBackend) error
+	runFunc          func(*sidecred.Sidecred, sidecred.StateBackend, sidecred.RunConfig) error
 	awsClientFactory func() (s3.S3API, sts.STSAPI, ssm.SSMAPI, secretsmanager.SecretsManagerAPI)
 	loggerFactory    func(bool) (*zap.Logger, error)
 )
@@ -174,11 +174,11 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 			logger.Fatal("unknown state backend", zap.String("backend", *stateBackend))
 		}
 
-		s, err := sidecred.New(providers, stores, *rotationWindow, logger)
+		s, err := sidecred.New(providers, stores, *rotationWindow)
 		if err != nil {
 			logger.Fatal("initialize sidecred", zap.Error(err))
 		}
-		if err := run(s, backend); err != nil {
+		if err := run(s, backend, sidecred.RunConfig{Logger: logger}); err != nil {
 			logger.Fatal("run failed", zap.Error(err))
 		}
 		return nil

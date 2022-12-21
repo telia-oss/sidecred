@@ -41,8 +41,8 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
-	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
+func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend, sidecred.RunConfig) error {
+	return func(s *sidecred.Sidecred, backend sidecred.StateBackend, runConfig sidecred.RunConfig) error {
 		ctx := context.Background()
 
 		b, err := os.ReadFile(*cfg)

@@ -12,7 +12,14 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	"github.com/telia-oss/sidecred/eventctx"
 )
+
+// RunConfig ...
+type RunConfig struct {
+	Logger *zap.Logger
+}
 
 // Validatable allows sidecred to ensure the validity of the opaque config values used for processing a request.
 type Validatable interface {
@@ -293,12 +300,11 @@ func BuildSecretTemplate(secretTemplate, namespace, name string) (string, error)
 }
 
 // New returns a new instance of sidecred.Sidecred with the desired configuration.
-func New(providers []Provider, stores []SecretStore, rotationWindow time.Duration, logger *zap.Logger) (*Sidecred, error) {
+func New(providers []Provider, stores []SecretStore, rotationWindow time.Duration) (*Sidecred, error) {
 	s := &Sidecred{
 		providers:      make(map[ProviderType]Provider, len(providers)),
 		stores:         make(map[StoreType]SecretStore, len(stores)),
 		rotationWindow: rotationWindow,
-		logger:         logger,
 	}
 	for _, p := range providers {
 		s.providers[p.Type()] = p
@@ -314,12 +320,11 @@ type Sidecred struct {
 	providers      map[ProviderType]Provider
 	stores         map[StoreType]SecretStore
 	rotationWindow time.Duration
-	logger         *zap.Logger
 }
 
 // Process a single sidecred.Request.
 func (s *Sidecred) Process(ctx context.Context, config Config, state *State) error {
-	log := s.logger.With(zap.String("namespace", config.Namespace()))
+	log := eventctx.GetLogger(ctx)
 	log.Info("starting sidecred", zap.Int("requests", len(config.Requests())))
 
 	if err := config.Validate(); err != nil {
@@ -405,7 +410,7 @@ RequestLoop:
 				log.Debug("missing provider for expired resource", zap.String("type", string(ps.Type)))
 				continue
 			}
-			log := s.logger.With(
+			log := log.With(
 				zap.String("type", string(ps.Type)),
 				zap.String("id", resource.ID),
 			)
