@@ -11,6 +11,7 @@ import (
 	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
 
+	"github.com/telia-oss/sidecred/eventctx"
 	"github.com/telia-oss/sidecred/githubrotator"
 	"github.com/telia-oss/sidecred/githubrotator/fakes"
 )
@@ -69,24 +70,24 @@ func TestRotator_CreateInstallationToken(t *testing.T) {
 	})
 
 	// App 0 called, returns RateLimitError, rotates, App 1 called, returns Error, rotates, App 2 called, returns tokenA
-	token, err := rotator.CreateInstallationToken("telia-oss", []string{"sidecred"}, nil)
+	token, err := rotator.CreateInstallationToken(eventctx.TestContext(t), "telia-oss", []string{"sidecred"}, nil)
 	fmt.Println("TOKEN", token)
 	fmt.Println("ERROR", err)
 	assert.Expect(token.GetToken()).To(Equal("a"))
 	assert.Expect(err).To(BeNil())
 
 	// tokenA GetTokenRateLimits called, returns low rate limit, rotate, App 0 by passed, App 1 called, returns tokenB
-	token, err = rotator.CreateInstallationToken("telia-oss", []string{"sidecred"}, nil)
+	token, err = rotator.CreateInstallationToken(eventctx.TestContext(t), "telia-oss", []string{"sidecred"}, nil)
 	assert.Expect(token.GetToken()).To(Equal("b"))
 	assert.Expect(err).To(BeNil())
 
 	// tokenB GetTokenRateLimits called, returns Error
-	token, err = rotator.CreateInstallationToken("telia-oss", []string{"sidecred"}, nil)
+	token, err = rotator.CreateInstallationToken(eventctx.TestContext(t), "telia-oss", []string{"sidecred"}, nil)
 	assert.Expect(token).To(BeNil())
 	assert.Expect(err).To(HaveOccurred())
 
 	// tokenB GetTokenRateLimits called, returns rate limit above cutoff, returns tokenC
-	token, err = rotator.CreateInstallationToken("telia-oss", []string{"sidecred"}, nil)
+	token, err = rotator.CreateInstallationToken(eventctx.TestContext(t), "telia-oss", []string{"sidecred"}, nil)
 	assert.Expect(token).To(Equal(tokenC))
 	assert.Expect(err).To(BeNil())
 }

@@ -2,6 +2,7 @@
 package githubfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/telia-oss/githubapp"
@@ -9,12 +10,13 @@ import (
 )
 
 type FakeApp struct {
-	CreateInstallationTokenStub        func(string, []string, *githubapp.Permissions) (*githubapp.Token, error)
+	CreateInstallationTokenStub        func(context.Context, string, []string, *githubapp.Permissions) (*githubapp.Token, error)
 	createInstallationTokenMutex       sync.RWMutex
 	createInstallationTokenArgsForCall []struct {
-		arg1 string
-		arg2 []string
-		arg3 *githubapp.Permissions
+		arg1 context.Context
+		arg2 string
+		arg3 []string
+		arg4 *githubapp.Permissions
 	}
 	createInstallationTokenReturns struct {
 		result1 *githubapp.Token
@@ -28,25 +30,26 @@ type FakeApp struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeApp) CreateInstallationToken(arg1 string, arg2 []string, arg3 *githubapp.Permissions) (*githubapp.Token, error) {
-	var arg2Copy []string
-	if arg2 != nil {
-		arg2Copy = make([]string, len(arg2))
-		copy(arg2Copy, arg2)
+func (fake *FakeApp) CreateInstallationToken(arg1 context.Context, arg2 string, arg3 []string, arg4 *githubapp.Permissions) (*githubapp.Token, error) {
+	var arg3Copy []string
+	if arg3 != nil {
+		arg3Copy = make([]string, len(arg3))
+		copy(arg3Copy, arg3)
 	}
 	fake.createInstallationTokenMutex.Lock()
 	ret, specificReturn := fake.createInstallationTokenReturnsOnCall[len(fake.createInstallationTokenArgsForCall)]
 	fake.createInstallationTokenArgsForCall = append(fake.createInstallationTokenArgsForCall, struct {
-		arg1 string
-		arg2 []string
-		arg3 *githubapp.Permissions
-	}{arg1, arg2Copy, arg3})
+		arg1 context.Context
+		arg2 string
+		arg3 []string
+		arg4 *githubapp.Permissions
+	}{arg1, arg2, arg3Copy, arg4})
 	stub := fake.CreateInstallationTokenStub
 	fakeReturns := fake.createInstallationTokenReturns
-	fake.recordInvocation("CreateInstallationToken", []interface{}{arg1, arg2Copy, arg3})
+	fake.recordInvocation("CreateInstallationToken", []interface{}{arg1, arg2, arg3Copy, arg4})
 	fake.createInstallationTokenMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -60,17 +63,17 @@ func (fake *FakeApp) CreateInstallationTokenCallCount() int {
 	return len(fake.createInstallationTokenArgsForCall)
 }
 
-func (fake *FakeApp) CreateInstallationTokenCalls(stub func(string, []string, *githubapp.Permissions) (*githubapp.Token, error)) {
+func (fake *FakeApp) CreateInstallationTokenCalls(stub func(context.Context, string, []string, *githubapp.Permissions) (*githubapp.Token, error)) {
 	fake.createInstallationTokenMutex.Lock()
 	defer fake.createInstallationTokenMutex.Unlock()
 	fake.CreateInstallationTokenStub = stub
 }
 
-func (fake *FakeApp) CreateInstallationTokenArgsForCall(i int) (string, []string, *githubapp.Permissions) {
+func (fake *FakeApp) CreateInstallationTokenArgsForCall(i int) (context.Context, string, []string, *githubapp.Permissions) {
 	fake.createInstallationTokenMutex.RLock()
 	defer fake.createInstallationTokenMutex.RUnlock()
 	argsForCall := fake.createInstallationTokenArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeApp) CreateInstallationTokenReturns(result1 *githubapp.Token, result2 error) {

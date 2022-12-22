@@ -135,7 +135,7 @@ func (p *provider) createAccessToken(ctx context.Context, request *sidecred.Cred
 	if c.Permissions != nil {
 		permissions = c.Permissions
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, c.Repositories, permissions)
+	token, err := p.app.CreateInstallationToken(ctx, c.Owner, c.Repositories, permissions)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create access token: %s", err)
 	}
@@ -158,7 +158,7 @@ func (p *provider) createDeployKey(ctx context.Context, request *sidecred.Creden
 	if err := request.UnmarshalConfig(&c); err != nil {
 		return nil, nil, err
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
+	token, err := p.app.CreateInstallationToken(ctx, c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
 	})
 	if err != nil {
@@ -226,7 +226,7 @@ func (p *provider) Destroy(ctx context.Context, resource *sidecred.Resource) err
 	if err != nil {
 		return fmt.Errorf("failed to convert key id (%s) to int: %s", s, err)
 	}
-	token, err := p.app.CreateInstallationToken(c.Owner, []string{c.Repository}, &githubapp.Permissions{
+	token, err := p.app.CreateInstallationToken(ctx, c.Owner, []string{c.Repository}, &githubapp.Permissions{
 		Administration: github.String("write"), // Used to add deploy keys to repositories: https://developer.github.com/v3/apps/permissions/#permission-on-administration
 	})
 	if err != nil {
@@ -246,7 +246,7 @@ func (p *provider) Destroy(ctx context.Context, resource *sidecred.Resource) err
 //
 //counterfeiter:generate . App
 type App interface {
-	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
+	CreateInstallationToken(ctx context.Context, owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error)
 }
 
 // RepositoriesAPI wraps the Github repositories API.

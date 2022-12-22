@@ -109,7 +109,7 @@ func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Cr
 	//
 	// It is not supported as of v32 of go-github:
 	// https://github.com/google/go-github/blob/v32.1.0/github/apps.go#L60
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", fmt.Errorf("create secrets access token: %w", err)
 	}
@@ -158,7 +158,7 @@ func (s *store) Read(ctx context.Context, path string, config json.RawMessage) (
 	if err != nil {
 		return "", false, fmt.Errorf("parse config: %w", err)
 	}
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", false, fmt.Errorf("create secrets access token: %w", err)
 	}
@@ -180,7 +180,7 @@ func (s *store) Delete(ctx context.Context, path string, config json.RawMessage)
 	if err != nil {
 		return fmt.Errorf("parse config: %w", err)
 	}
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return fmt.Errorf("create secrets access token: %w", err)
 	}
