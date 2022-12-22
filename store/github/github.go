@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/telia-oss/sidecred"
@@ -24,7 +23,7 @@ import (
 var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // NewStore creates a new sidecred.SecretStore using Github repository secrets.
-func NewStore(app App, logger *zap.Logger, options ...Option) sidecred.SecretStore {
+func NewStore(app App, options ...Option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
 		keys:           make(map[string]*github.PublicKey),
@@ -32,7 +31,6 @@ func NewStore(app App, logger *zap.Logger, options ...Option) sidecred.SecretSto
 		actionsClientFactory: func(token string) ActionsAPI {
 			return githubapp.NewInstallationClient(token).V3.Actions
 		},
-		logger: logger,
 	}
 	for _, optionFunc := range options {
 		optionFunc(s)
@@ -74,7 +72,6 @@ type store struct {
 	keys                 map[string]*github.PublicKey
 	actionsClientFactory func(token string) ActionsAPI
 	secretTemplate       string
-	logger               *zap.Logger
 }
 
 // config that can be passed to the Configure method of this store.
@@ -94,7 +91,7 @@ func (s *store) Type() sidecred.StoreType {
 
 // Write implements sidecred.SecretStore.
 func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
-	log := s.logger.With(zap.String("namespace", namespace))
+	log := eventctx.GetLogger(ctx)
 	log.Debug("start Write")
 	c, err := s.parseConfig(config)
 	if err != nil {

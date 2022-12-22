@@ -146,7 +146,6 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 					PrivateKeys:    strings.Split(*githubStorePrivateKey, ","),
 					Logger:         logger,
 				}),
-				logger,
 				githubstore.WithSecretTemplate(*githubStoreSecretTemplate),
 			))
 		}
@@ -158,7 +157,6 @@ func AddRunCommand(app *kingpin.Application, run runFunc, newAWSClient awsClient
 					PrivateKeys:    strings.Split(*githubDependabotStorePrivateKey, ","),
 					Logger:         logger,
 				}),
-				logger,
 				githubstore.WithSecretTemplate(*githubDependabotStoreSecretTemplate),
 			))
 		}

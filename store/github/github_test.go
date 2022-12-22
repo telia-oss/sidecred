@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/telia-oss/githubapp"
-	"go.uber.org/zap/zaptest"
 
 	"github.com/telia-oss/sidecred"
 	secretstore "github.com/telia-oss/sidecred/store/github"
@@ -60,7 +59,6 @@ func TestWrite(t *testing.T) {
 			fakeActionsAPI.CreateOrUpdateRepoSecretReturns(nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithSecretTemplate(tc.secretTemplate),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
@@ -107,7 +105,6 @@ func TestRead(t *testing.T) {
 			fakeActionsAPI.GetRepoSecretReturns(&github.Secret{Name: secretValue}, nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
@@ -147,7 +144,6 @@ func TestDelete(t *testing.T) {
 			fakeActionsAPI.DeleteRepoSecretReturns(nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
