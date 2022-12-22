@@ -19,6 +19,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/eventctx"
 )
 
 var (
@@ -170,7 +171,7 @@ func (p *provider) createDeployKey(ctx context.Context, request *sidecred.Creden
 		return nil, nil, fmt.Errorf("generate key pair: %s", err)
 	}
 
-	key, _, err := p.reposClientFactory(token.GetToken()).CreateKey(ctx, c.Owner, c.Repository, &github.Key{
+	key, _, err := p.createKey(ctx, token.GetToken(), c.Owner, c.Repository, &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
@@ -188,6 +189,11 @@ func (p *provider) createDeployKey(ctx context.Context, request *sidecred.Creden
 		Description: "Github deploy key managed by sidecred.",
 		Expiration:  key.GetCreatedAt().Add(p.keyRotationInterval).UTC(),
 	}}, metadata, nil
+}
+
+func (p *provider) createKey(ctx context.Context, token, owner, repo string, key *github.Key) (*github.Key, *github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return p.reposClientFactory(token).CreateKey(ctx, owner, repo, key)
 }
 
 func (p *provider) generateKeyPair() (string, string, error) {
@@ -232,7 +238,7 @@ func (p *provider) Destroy(ctx context.Context, resource *sidecred.Resource) err
 	if err != nil {
 		return fmt.Errorf("create administrator access token: %s", err)
 	}
-	resp, err := p.reposClientFactory(token.GetToken()).DeleteKey(ctx, c.Owner, c.Repository, keyID)
+	resp, err := p.deleteKey(ctx, token.GetToken(), c.Owner, c.Repository, keyID)
 	if err != nil {
 		// Ignore error if status code is 404 (key not found)
 		if resp == nil || resp.StatusCode != 404 {
@@ -240,6 +246,11 @@ func (p *provider) Destroy(ctx context.Context, resource *sidecred.Resource) err
 		}
 	}
 	return nil
+}
+
+func (p *provider) deleteKey(ctx context.Context, token, owner, repo string, id int64) (*github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return p.reposClientFactory(token).DeleteKey(ctx, owner, repo, id)
 }
 
 // App is the interface that needs to be satisfied by the Github App implementation.

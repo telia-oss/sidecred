@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/eventctx"
 )
 
 // illegalCharactersRegex matches characters that are not supported by Github,
@@ -116,7 +117,7 @@ func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Cr
 	log.Debug("created installation token")
 
 	if _, found := s.keys[c.RepositorySlug]; !found {
-		key, _, err := s.actionsClientFactory(token.GetToken()).GetRepoPublicKey(ctx, c.owner, c.repository)
+		key, _, err := s.getRepoPublicKey(ctx, token.GetToken(), c.owner, c.repository)
 		if err != nil {
 			return "", fmt.Errorf("get public key: %w", err)
 		}
@@ -135,19 +136,27 @@ func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Cr
 		return "", fmt.Errorf("sanitize path: %w", err)
 	}
 
-	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(
-		ctx, c.owner, c.repository, &github.EncryptedSecret{
-			Name:           path,
-			KeyID:          publicKey.GetKeyID(),
-			EncryptedValue: encryptedSecret,
-		},
-	)
+	_, err = s.createOrUpdateRepoSecret(ctx, token.GetToken(), c.owner, c.repository, &github.EncryptedSecret{
+		Name:           path,
+		KeyID:          publicKey.GetKeyID(),
+		EncryptedValue: encryptedSecret,
+	})
 	log.Debug("created or updated repo secret")
 	if err != nil {
 		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
 	}
 
 	return path, nil
+}
+
+func (s *store) getRepoPublicKey(ctx context.Context, token, owner, repo string) (*github.PublicKey, *github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return s.actionsClientFactory(token).GetRepoPublicKey(ctx, owner, repo)
+}
+
+func (s *store) createOrUpdateRepoSecret(ctx context.Context, token, owner, repo string, secret *github.EncryptedSecret) (*github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return s.actionsClientFactory(token).CreateOrUpdateRepoSecret(ctx, owner, repo, secret)
 }
 
 // Read implements sidecred.SecretStore.

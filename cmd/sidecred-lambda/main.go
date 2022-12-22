@@ -70,9 +70,13 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 				zap.Uint64("dd.span_id", uid),
 			))
 
+			ctx = eventctx.SetStats(ctx, &eventctx.Stats{
+				CallsToGithub: 0,
+			})
+
 			cfg, err := loadConfig(ctx, *configBucket, event.ConfigPath)
 			if err != nil {
-				return fmt.Errorf("failed to load config: %s", err)
+				return failure(ctx, cfg.Namespace(), fmt.Errorf("failed to load config: %s", err))
 			}
 
 			ctx = eventctx.SetLogger(ctx, eventctx.GetLogger(ctx).With(
@@ -81,21 +85,35 @@ func runFunc(configBucket *string) func(*sidecred.Sidecred, sidecred.StateBacken
 
 			state, err := backend.Load(ctx, event.StatePath)
 			if err != nil {
-				return fmt.Errorf("failed to load state: %s", err)
+				return failure(ctx, cfg.Namespace(), fmt.Errorf("failed to load state: %s", err))
 			}
 
 			if err := s.Process(ctx, cfg, state); err != nil {
-				return err
+				return failure(ctx, cfg.Namespace(), err)
 			}
 
 			if err := backend.Save(ctx, event.StatePath, state); err != nil {
-				return fmt.Errorf("failed to save state: %s", err)
+				return failure(ctx, cfg.Namespace(), fmt.Errorf("failed to save state: %s", err))
 			}
+
+			stats := eventctx.GetStats(ctx)
+			eventctx.GetLogger(ctx).Info(fmt.Sprintf("processing '%s' done", cfg.Namespace()),
+				zap.Int("calls_to_github", stats.CallsToGithub),
+			)
 
 			return nil
 		})
 		return nil
 	}
+}
+
+func failure(ctx context.Context, namespace string, err error) error {
+	stats := eventctx.GetStats(ctx)
+	eventctx.GetLogger(ctx).Info(fmt.Sprintf("processing '%s' failed", namespace),
+		zap.Int("calls_to_github", stats.CallsToGithub),
+	)
+
+	return err
 }
 
 func loadConfig(ctx context.Context, bucket, key string) (sidecred.Config, error) {

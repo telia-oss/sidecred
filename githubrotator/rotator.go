@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
+
+	"github.com/telia-oss/sidecred/eventctx"
 )
 
 const (
@@ -102,6 +104,7 @@ func (r *Rotator) createInstallationToken(ctx context.Context, owner string, rep
 		r.logger.Debug("create installation token",
 			zap.String("app", r.apps[0].integrationID))
 
+		eventctx.GetStats(ctx).IncGithubCalls()
 		var rateLimitError *github.RateLimitError
 		token, err := r.apps[0].app.CreateInstallationToken(owner, repositories, permissions)
 		switch {
