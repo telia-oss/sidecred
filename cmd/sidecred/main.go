@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/alecthomas/kingpin"
+	"go.uber.org/zap"
 
 	"github.com/telia-oss/sidecred"
 	"github.com/telia-oss/sidecred/config"
+	"github.com/telia-oss/sidecred/eventctx"
 	"github.com/telia-oss/sidecred/internal/cli"
 )
 
@@ -40,26 +43,42 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
-func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend) error {
-	return func(s *sidecred.Sidecred, backend sidecred.StateBackend) error {
+func runFunc(cfg, statePath *string) func(*sidecred.Sidecred, sidecred.StateBackend, sidecred.RunConfig) error {
+	return func(s *sidecred.Sidecred, backend sidecred.StateBackend, runConfig sidecred.RunConfig) error {
+		ctx := context.Background()
+
+		ctx = eventctx.SetStats(ctx, &eventctx.Stats{
+			CallsToGithub: 0,
+		})
+
 		b, err := os.ReadFile(*cfg)
 		if err != nil {
 			return fmt.Errorf("failed to read config: %s", err)
 		}
+
 		cfg, err := config.Parse(b)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %s", err)
 		}
-		state, err := backend.Load(*statePath)
+
+		state, err := backend.Load(ctx, *statePath)
 		if err != nil {
 			return fmt.Errorf("failed to load state: %s", err)
 		}
-		if err := s.Process(cfg, state); err != nil {
+
+		if err := s.Process(ctx, cfg, state); err != nil {
 			return err
 		}
-		if err := backend.Save(*statePath, state); err != nil {
+
+		if err := backend.Save(ctx, *statePath, state); err != nil {
 			return fmt.Errorf("failed to save state: %s", err)
 		}
+
+		stats := eventctx.GetStats(ctx)
+		eventctx.GetLogger(ctx).Info(fmt.Sprintf("processing '%s' done", cfg.Namespace()),
+			zap.Int("calls_to_github", stats.CallsToGithub),
+		)
+
 		return nil
 	}
 }

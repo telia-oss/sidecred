@@ -1,13 +1,13 @@
 package github_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/google/go-github/v45/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/telia-oss/githubapp"
-	"go.uber.org/zap/zaptest"
 
 	"github.com/telia-oss/sidecred"
 	secretstore "github.com/telia-oss/sidecred/store/github"
@@ -59,13 +59,12 @@ func TestWrite(t *testing.T) {
 			fakeActionsAPI.CreateOrUpdateRepoSecretReturns(nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithSecretTemplate(tc.secretTemplate),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
 			)
-			path, err := store.Write(teamName, secret, tc.config)
+			path, err := store.Write(context.TODO(), teamName, secret, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.secretPath, path)
@@ -106,12 +105,11 @@ func TestRead(t *testing.T) {
 			fakeActionsAPI.GetRepoSecretReturns(&github.Secret{Name: secretValue}, nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
 			)
-			secret, found, err := store.Read(tc.secretPath, tc.config)
+			secret, found, err := store.Read(context.TODO(), tc.secretPath, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectFound, found)
@@ -146,12 +144,11 @@ func TestDelete(t *testing.T) {
 			fakeActionsAPI.DeleteRepoSecretReturns(nil, nil)
 
 			store := secretstore.NewStore(fakeApp,
-				zaptest.NewLogger(t),
 				secretstore.WithActionsClientFactory(func(string) secretstore.ActionsAPI {
 					return fakeActionsAPI
 				}),
 			)
-			err := store.Delete(tc.secretPath, tc.config)
+			err := store.Delete(context.TODO(), tc.secretPath, tc.config)
 
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, 1, fakeActionsAPI.DeleteRepoSecretCallCount())

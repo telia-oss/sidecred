@@ -4,6 +4,7 @@ package s3
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -36,7 +37,7 @@ type backend struct {
 }
 
 // Load implements sidecred.StateBackend.
-func (b *backend) Load(key string) (*sidecred.State, error) {
+func (b *backend) Load(ctx context.Context, key string) (*sidecred.State, error) {
 	var state sidecred.State
 	obj, err := b.client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(b.bucket),
@@ -64,7 +65,7 @@ func (b *backend) Load(key string) (*sidecred.State, error) {
 }
 
 // Save implements sidecred.StateBackend.
-func (b *backend) Save(key string, state *sidecred.State) error {
+func (b *backend) Save(ctx context.Context, key string, state *sidecred.State) error {
 	o, err := json.Marshal(state)
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package inprocess_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -46,16 +47,16 @@ func TestInProcessStore(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			store := secretstore.New(secretstore.WithSecretTemplate(tc.secretTemplate))
 
-			path, err := store.Write(teamName, secret, tc.config)
+			path, err := store.Write(context.TODO(), teamName, secret, tc.config)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.secretPath, path)
 
-			actual, found, err := store.Read(path, nil)
+			actual, found, err := store.Read(context.TODO(), path, nil)
 			assert.Nil(t, err)
 			assert.Equal(t, true, found)
 			assert.Equal(t, secret.Value, actual)
 
-			err = store.Delete(path, nil)
+			err = store.Delete(context.TODO(), path, nil)
 			assert.Nil(t, err)
 		})
 	}

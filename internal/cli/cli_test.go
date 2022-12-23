@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/telia-oss/sidecred/backend/s3"
 	"github.com/telia-oss/sidecred/backend/s3/s3fakes"
 	"github.com/telia-oss/sidecred/config"
+	"github.com/telia-oss/sidecred/eventctx"
 	"github.com/telia-oss/sidecred/internal/cli"
 	"github.com/telia-oss/sidecred/provider/sts"
 	"github.com/telia-oss/sidecred/provider/sts/stsfakes"
@@ -78,12 +80,17 @@ requests:
         length: 10
             `)
 
-			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend) error {
+			runFunc := func(s *sidecred.Sidecred, _ sidecred.StateBackend, runConfig sidecred.RunConfig) error {
 				c, err := config.Parse([]byte(cfg))
 				if err != nil {
 					return fmt.Errorf("failed to parse config: %s", err)
 				}
-				return s.Process(c, &sidecred.State{})
+
+				ctx := eventctx.SetLogger(context.TODO(), runConfig.Logger.With(
+					zap.String("namespace", "example"),
+				))
+
+				return s.Process(ctx, c, &sidecred.State{})
 			}
 
 			app := kingpin.New("test", "").Terminate(nil)

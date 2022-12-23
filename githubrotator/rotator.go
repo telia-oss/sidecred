@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
 	"go.uber.org/zap"
+
+	"github.com/telia-oss/sidecred/eventctx"
 )
 
 const (
@@ -45,13 +47,13 @@ type Rotator struct {
 	rateLimitClient RateLimits
 }
 
-func (r *Rotator) CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
+func (r *Rotator) CreateInstallationToken(ctx context.Context, owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
 	if r.apps[0].hasValidToken() {
 		r.logger.Debug("retrieving rate limits for token",
 			zap.String("token_expires_at", r.apps[0].token.ExpiresAt.String()),
 			zap.String("app", r.apps[0].integrationID))
 
-		rateLimits, _, err := r.rateLimitClient.GetTokenRateLimits(context.TODO(), r.apps[0].token.GetToken())
+		rateLimits, _, err := r.rateLimitClient.GetTokenRateLimits(ctx, r.apps[0].token.GetToken())
 		switch {
 		case err != nil:
 			r.logger.Debug("unexpected error when retrieving rate limits",
@@ -77,14 +79,14 @@ func (r *Rotator) CreateInstallationToken(owner string, repositories []string, p
 		}
 	}
 
-	return r.createInstallationToken(owner, repositories, permissions)
+	return r.createInstallationToken(ctx, owner, repositories, permissions)
 }
 
 func hasTokenExpired(token *githubapp.Token) bool {
 	return token.ExpiresAt.Sub(time.Now()).Seconds() <= 5 //nolint:gosimple,gocritic
 }
 
-func (r *Rotator) createInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
+func (r *Rotator) createInstallationToken(ctx context.Context, owner string, repositories []string, permissions *githubapp.Permissions) (*githubapp.Token, error) {
 	r.logger.Debug("createInstallationToken called",
 		zap.String("app", r.apps[0].integrationID),
 		zap.Int("number_of_apps", len(r.apps)))
@@ -102,6 +104,7 @@ func (r *Rotator) createInstallationToken(owner string, repositories []string, p
 		r.logger.Debug("create installation token",
 			zap.String("app", r.apps[0].integrationID))
 
+		eventctx.GetStats(ctx).IncGithubCalls()
 		var rateLimitError *github.RateLimitError
 		token, err := r.apps[0].app.CreateInstallationToken(owner, repositories, permissions)
 		switch {

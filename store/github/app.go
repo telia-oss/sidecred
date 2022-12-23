@@ -1,6 +1,8 @@
 package github
 
 import (
+	"context"
+
 	"github.com/telia-oss/githubapp"
 )
 
@@ -8,7 +10,7 @@ import (
 //
 //counterfeiter:generate . App
 type App interface {
-	CreateInstallationToken(owner string, repositories []string, permissions *githubapp.Permissions) (
+	CreateInstallationToken(ctx context.Context, owner string, repositories []string, permissions *githubapp.Permissions) (
 		*githubapp.Token,
 		error,
 	)

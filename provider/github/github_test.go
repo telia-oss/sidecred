@@ -1,6 +1,7 @@
 package github_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -84,7 +85,7 @@ func TestGithubProvider(t *testing.T) {
 				}),
 			)
 
-			creds, metadata, err := p.Create(tc.request)
+			creds, metadata, err := p.Create(context.TODO(), tc.request)
 			require.NoError(t, err)
 			require.Len(t, creds, len(tc.expected))
 			assert.Equal(t, tc.expectedMetadata, metadata)

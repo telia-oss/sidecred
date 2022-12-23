@@ -2,6 +2,7 @@ package sidecred
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -11,7 +12,14 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	"github.com/telia-oss/sidecred/eventctx"
 )
+
+// RunConfig ...
+type RunConfig struct {
+	Logger *zap.Logger
+}
 
 // Validatable allows sidecred to ensure the validity of the opaque config values used for processing a request.
 type Validatable interface {
@@ -198,12 +206,12 @@ type Provider interface {
 	// Create the requested credentials. Any sidecred.Resource
 	// returned will be stored in state and used to determine
 	// when credentials need to be rotated.
-	Create(request *CredentialRequest) ([]*Credential, *Metadata, error)
+	Create(ctx context.Context, request *CredentialRequest) ([]*Credential, *Metadata, error)
 
 	// Destroy the specified resource. This is scheduled if
 	// a resource in the state has expired. For providers that
 	// are not stateful this should be a no-op.
-	Destroy(resource *Resource) error
+	Destroy(ctx context.Context, resource *Resource) error
 }
 
 // Metadata allows providers to pass additional information to be
@@ -259,14 +267,14 @@ type SecretStore interface {
 	Type() StoreType
 
 	// Write a sidecred.Credential to the secret store.
-	Write(namespace string, secret *Credential, config json.RawMessage) (string, error)
+	Write(ctx context.Context, namespace string, secret *Credential, config json.RawMessage) (string, error)
 
 	// Read the specified secret by reference.
-	Read(path string, config json.RawMessage) (string, bool, error)
+	Read(ctx context.Context, path string, config json.RawMessage) (string, bool, error)
 
 	// Delete the specified secret. Should not return an error
 	// if the secret does not exist or has already been deleted.
-	Delete(path string, config json.RawMessage) error
+	Delete(ctx context.Context, path string, config json.RawMessage) error
 }
 
 // BuildSecretTemplate is a convenience function for building secret templates.
@@ -292,12 +300,11 @@ func BuildSecretTemplate(secretTemplate, namespace, name string) (string, error)
 }
 
 // New returns a new instance of sidecred.Sidecred with the desired configuration.
-func New(providers []Provider, stores []SecretStore, rotationWindow time.Duration, logger *zap.Logger) (*Sidecred, error) {
+func New(providers []Provider, stores []SecretStore, rotationWindow time.Duration) (*Sidecred, error) {
 	s := &Sidecred{
 		providers:      make(map[ProviderType]Provider, len(providers)),
 		stores:         make(map[StoreType]SecretStore, len(stores)),
 		rotationWindow: rotationWindow,
-		logger:         logger,
 	}
 	for _, p := range providers {
 		s.providers[p.Type()] = p
@@ -313,12 +320,11 @@ type Sidecred struct {
 	providers      map[ProviderType]Provider
 	stores         map[StoreType]SecretStore
 	rotationWindow time.Duration
-	logger         *zap.Logger
 }
 
 // Process a single sidecred.Request.
-func (s *Sidecred) Process(config Config, state *State) error {
-	log := s.logger.With(zap.String("namespace", config.Namespace()))
+func (s *Sidecred) Process(ctx context.Context, config Config, state *State) error {
+	log := eventctx.GetLogger(ctx)
 	log.Info("starting sidecred", zap.Int("requests", len(config.Requests())))
 
 	if err := config.Validate(); err != nil {
@@ -364,7 +370,7 @@ RequestLoop:
 				}
 			}
 
-			creds, metadata, err := p.Create(r)
+			creds, metadata, err := p.Create(ctx, r)
 			if err != nil {
 				log.Error("failed to provide credentials", zap.Error(err))
 				continue CredentialLoop
@@ -378,7 +384,7 @@ RequestLoop:
 
 			for _, c := range creds {
 				log.Debug("start creds for-loop")
-				path, err := store.Write(config.Namespace(), c, storeConfig.Config)
+				path, err := store.Write(ctx, config.Namespace(), c, storeConfig.Config)
 				if err != nil {
 					log.Error("store credential", zap.String("name", c.Name), zap.Error(err))
 					continue
@@ -404,12 +410,12 @@ RequestLoop:
 				log.Debug("missing provider for expired resource", zap.String("type", string(ps.Type)))
 				continue
 			}
-			log := s.logger.With(
+			log := log.With(
 				zap.String("type", string(ps.Type)),
 				zap.String("id", resource.ID),
 			)
 			log.Info("destroying expired resource")
-			if err := provider.Destroy(resource); err != nil {
+			if err := provider.Destroy(ctx, resource); err != nil {
 				log.Error("destroy resource", zap.Error(err))
 			}
 			state.RemoveResource(resource)
@@ -427,7 +433,7 @@ RequestLoop:
 				continue
 			}
 			log.Info("deleting orphaned secret", zap.String("path", secret.Path))
-			if err := store.Delete(secret.Path, ss.StoreConfig.Config); err != nil {
+			if err := store.Delete(ctx, secret.Path, ss.StoreConfig.Config); err != nil {
 				log.Error("delete secret", zap.String("path", secret.Path), zap.Error(err))
 			}
 			state.RemoveSecret(ss.StoreConfig, secret)

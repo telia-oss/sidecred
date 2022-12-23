@@ -1,6 +1,7 @@
 package artifactory_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -68,7 +69,7 @@ func TestArtifactoryProvider(t *testing.T) {
 				provider.WithSessionDuration(tc.sessionDuration),
 			)
 
-			creds, metadata, err := p.Create(tc.request)
+			creds, metadata, err := p.Create(context.TODO(), tc.request)
 			require.NoError(t, err)
 			require.Equal(t, 1, fakeArtifactoryAPI.CreateTokenCallCount())
 			require.Len(t, creds, len(expectedCredentials))

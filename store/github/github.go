@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/go-github/v45/github"
 	"github.com/telia-oss/githubapp"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/telia-oss/sidecred"
+	"github.com/telia-oss/sidecred/eventctx"
 )
 
 // illegalCharactersRegex matches characters that are not supported by Github,
@@ -23,7 +23,7 @@ import (
 var illegalCharactersRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // NewStore creates a new sidecred.SecretStore using Github repository secrets.
-func NewStore(app App, logger *zap.Logger, options ...Option) sidecred.SecretStore {
+func NewStore(app App, options ...Option) sidecred.SecretStore {
 	s := &store{
 		app:            app,
 		keys:           make(map[string]*github.PublicKey),
@@ -31,7 +31,6 @@ func NewStore(app App, logger *zap.Logger, options ...Option) sidecred.SecretSto
 		actionsClientFactory: func(token string) ActionsAPI {
 			return githubapp.NewInstallationClient(token).V3.Actions
 		},
-		logger: logger,
 	}
 	for _, optionFunc := range options {
 		optionFunc(s)
@@ -73,7 +72,6 @@ type store struct {
 	keys                 map[string]*github.PublicKey
 	actionsClientFactory func(token string) ActionsAPI
 	secretTemplate       string
-	logger               *zap.Logger
 }
 
 // config that can be passed to the Configure method of this store.
@@ -92,8 +90,8 @@ func (s *store) Type() sidecred.StoreType {
 }
 
 // Write implements sidecred.SecretStore.
-func (s *store) Write(namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
-	log := s.logger.With(zap.String("namespace", namespace))
+func (s *store) Write(ctx context.Context, namespace string, secret *sidecred.Credential, config json.RawMessage) (string, error) {
+	log := eventctx.GetLogger(ctx)
 	log.Debug("start Write")
 	c, err := s.parseConfig(config)
 	if err != nil {
@@ -109,14 +107,14 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	//
 	// It is not supported as of v32 of go-github:
 	// https://github.com/google/go-github/blob/v32.1.0/github/apps.go#L60
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", fmt.Errorf("create secrets access token: %w", err)
 	}
 	log.Debug("created installation token")
 
 	if _, found := s.keys[c.RepositorySlug]; !found {
-		key, _, err := s.actionsClientFactory(token.GetToken()).GetRepoPublicKey(context.TODO(), c.owner, c.repository)
+		key, _, err := s.getRepoPublicKey(ctx, token.GetToken(), c.owner, c.repository)
 		if err != nil {
 			return "", fmt.Errorf("get public key: %w", err)
 		}
@@ -135,13 +133,11 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 		return "", fmt.Errorf("sanitize path: %w", err)
 	}
 
-	_, err = s.actionsClientFactory(token.GetToken()).CreateOrUpdateRepoSecret(
-		context.TODO(), c.owner, c.repository, &github.EncryptedSecret{
-			Name:           path,
-			KeyID:          publicKey.GetKeyID(),
-			EncryptedValue: encryptedSecret,
-		},
-	)
+	_, err = s.createOrUpdateRepoSecret(ctx, token.GetToken(), c.owner, c.repository, &github.EncryptedSecret{
+		Name:           path,
+		KeyID:          publicKey.GetKeyID(),
+		EncryptedValue: encryptedSecret,
+	})
 	log.Debug("created or updated repo secret")
 	if err != nil {
 		return "", fmt.Errorf("Actions.CreateOrUpdateRepoSecret returned error: %w", err)
@@ -150,20 +146,30 @@ func (s *store) Write(namespace string, secret *sidecred.Credential, config json
 	return path, nil
 }
 
+func (s *store) getRepoPublicKey(ctx context.Context, token, owner, repo string) (*github.PublicKey, *github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return s.actionsClientFactory(token).GetRepoPublicKey(ctx, owner, repo)
+}
+
+func (s *store) createOrUpdateRepoSecret(ctx context.Context, token, owner, repo string, secret *github.EncryptedSecret) (*github.Response, error) {
+	eventctx.GetStats(ctx).IncGithubCalls()
+	return s.actionsClientFactory(token).CreateOrUpdateRepoSecret(ctx, owner, repo, secret)
+}
+
 // Read implements sidecred.SecretStore.
 //
 // TODO: Remove Read from SecretStore interface and return structs from New etc. Then rewrite Read for tests only.
-func (s *store) Read(path string, config json.RawMessage) (string, bool, error) {
+func (s *store) Read(ctx context.Context, path string, config json.RawMessage) (string, bool, error) {
 	c, err := s.parseConfig(config)
 	if err != nil {
 		return "", false, fmt.Errorf("parse config: %w", err)
 	}
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return "", false, fmt.Errorf("create secrets access token: %w", err)
 	}
 	secret, _, err := s.actionsClientFactory(token.GetToken()).GetRepoSecret(
-		context.TODO(),
+		ctx,
 		c.owner,
 		c.repository,
 		path,
@@ -175,16 +181,16 @@ func (s *store) Read(path string, config json.RawMessage) (string, bool, error) 
 }
 
 // Delete implements sidecred.SecretStore.
-func (s *store) Delete(path string, config json.RawMessage) error {
+func (s *store) Delete(ctx context.Context, path string, config json.RawMessage) error {
 	c, err := s.parseConfig(config)
 	if err != nil {
 		return fmt.Errorf("parse config: %w", err)
 	}
-	token, err := s.app.CreateInstallationToken(c.owner, []string{c.repository}, nil)
+	token, err := s.app.CreateInstallationToken(ctx, c.owner, []string{c.repository}, nil)
 	if err != nil {
 		return fmt.Errorf("create secrets access token: %w", err)
 	}
-	resp, err := s.actionsClientFactory(token.GetToken()).DeleteRepoSecret(context.TODO(), c.owner, c.repository, path)
+	resp, err := s.actionsClientFactory(token.GetToken()).DeleteRepoSecret(ctx, c.owner, c.repository, path)
 	if err != nil {
 		// Assume that the secret no longer exists if a 404 error is encountered
 		if resp == nil || resp.StatusCode != 404 {
