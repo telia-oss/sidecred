@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/aws/aws-lambda-go v1.13.3
-	github.com/aws/aws-sdk-go v1.28.7
+	github.com/aws/aws-sdk-go v1.33.0
 	github.com/google/go-github/v45 v45.2.0
 	github.com/jfrog/jfrog-client-go v0.7.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
@@ -30,7 +30,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jfrog/gofrog v1.0.5 // indirect
-	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
+	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e // indirect
 	github.com/mholt/archiver v2.1.0+incompatible // indirect
 	github.com/mitchellh/go-homedir v1.0.0 // indirect
